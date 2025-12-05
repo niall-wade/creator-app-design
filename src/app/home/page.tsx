@@ -1111,6 +1111,7 @@ function ChatTab({
 function InboxTab() {
   const [activeTab, setActiveTab] = useState<"labels" | "drafts">("labels");
   const [negotiationTone, setNegotiationTone] = useState<"Soft" | "Standard" | "Firm">("Firm");
+  const [showInboxMenu, setShowInboxMenu] = useState(false);
   
   const labelCategories = [
     { name: "New Brand Deal", color: "bg-[#D4E9D7] text-[#3D6B47]" },
@@ -1170,7 +1171,7 @@ function InboxTab() {
       {activeTab === "labels" ? (
         <>
           {/* Connected Account Card */}
-          <div className="bg-white rounded-3xl border border-border overflow-hidden mb-5">
+          <div className="bg-white rounded-3xl border border-border mb-5">
             <div className="flex items-center gap-4 p-5">
               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-green-400 to-green-500 flex items-center justify-center text-white font-semibold">
                 N
@@ -1182,9 +1183,59 @@ function InboxTab() {
                   <span className="text-sm text-green-600">Connected</span>
                 </div>
               </div>
-              <button className="text-sm text-ink-light hover:text-ink transition-colors">
-                Manage
-              </button>
+              <div className="relative">
+                <button 
+                  onClick={() => setShowInboxMenu(!showInboxMenu)}
+                  className="p-2 -mr-2 text-ink-light hover:text-ink transition-colors"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="12" cy="5" r="2" />
+                    <circle cx="12" cy="12" r="2" />
+                    <circle cx="12" cy="19" r="2" />
+                  </svg>
+                </button>
+                
+                <AnimatePresence>
+                  {showInboxMenu && (
+                    <>
+                      <div 
+                        className="fixed inset-0 z-40" 
+                        onClick={() => setShowInboxMenu(false)}
+                      />
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute right-0 top-10 z-50 w-40 bg-white rounded-xl border border-border shadow-lg overflow-hidden"
+                      >
+                        <button
+                          onClick={() => setShowInboxMenu(false)}
+                          className="w-full flex items-center gap-3 px-4 py-3 text-sm text-ink hover:bg-cream transition-colors"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M18.36 6.64A9 9 0 1 1 5.64 6.64 9 9 0 0 1 18.36 6.64Z" />
+                            <line x1="12" y1="8" x2="12" y2="12" />
+                            <line x1="12" y1="16" x2="12.01" y2="16" />
+                          </svg>
+                          Turn off
+                        </button>
+                        <div className="h-px bg-border" />
+                        <button
+                          onClick={() => setShowInboxMenu(false)}
+                          className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                          </svg>
+                          Delete inbox
+                        </button>
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
           </div>
 
@@ -1239,7 +1290,7 @@ function InboxTab() {
       ) : (
         <>
           {/* Connected Account Card */}
-          <div className="bg-white rounded-3xl border border-border overflow-hidden mb-5">
+          <div className="bg-white rounded-3xl border border-border mb-5">
             <div className="flex items-center gap-4 p-5">
               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-green-400 to-green-500 flex items-center justify-center text-white font-semibold">
                 N
@@ -1251,9 +1302,59 @@ function InboxTab() {
                   <span className="text-sm text-green-600">Connected</span>
                 </div>
               </div>
-              <button className="text-sm text-ink-light hover:text-ink transition-colors">
-                Manage
-              </button>
+              <div className="relative">
+                <button 
+                  onClick={() => setShowInboxMenu(!showInboxMenu)}
+                  className="p-2 -mr-2 text-ink-light hover:text-ink transition-colors"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="12" cy="5" r="2" />
+                    <circle cx="12" cy="12" r="2" />
+                    <circle cx="12" cy="19" r="2" />
+                  </svg>
+                </button>
+                
+                <AnimatePresence>
+                  {showInboxMenu && (
+                    <>
+                      <div 
+                        className="fixed inset-0 z-40" 
+                        onClick={() => setShowInboxMenu(false)}
+                      />
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute right-0 top-10 z-50 w-40 bg-white rounded-xl border border-border shadow-lg overflow-hidden"
+                      >
+                        <button
+                          onClick={() => setShowInboxMenu(false)}
+                          className="w-full flex items-center gap-3 px-4 py-3 text-sm text-ink hover:bg-cream transition-colors"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M18.36 6.64A9 9 0 1 1 5.64 6.64 9 9 0 0 1 18.36 6.64Z" />
+                            <line x1="12" y1="8" x2="12" y2="12" />
+                            <line x1="12" y1="16" x2="12.01" y2="16" />
+                          </svg>
+                          Turn off
+                        </button>
+                        <div className="h-px bg-border" />
+                        <button
+                          onClick={() => setShowInboxMenu(false)}
+                          className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                          </svg>
+                          Delete inbox
+                        </button>
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
           </div>
 
