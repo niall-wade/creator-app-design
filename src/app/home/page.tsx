@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 
 type Tab = "outreach" | "discover" | "chat" | "inbox";
 
 export default function Home() {
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<Tab>("outreach");
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [chatMessage, setChatMessage] = useState("");
@@ -21,17 +23,29 @@ export default function Home() {
       window.matchMedia('(display-mode: standalone)').matches || 
       (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
     
+    // Check if coming from onboarding
+    const fromOnboarding = searchParams.get("fromOnboarding") === "true";
+    
     // Only show install prompt if not already installed as PWA
     if (!isStandalone) {
-      const hasSeenInstallDrawer = localStorage.getItem("hasSeenInstallDrawer");
-      if (!hasSeenInstallDrawer) {
+      if (fromOnboarding) {
+        // Always show when coming from onboarding
         const timer = setTimeout(() => {
           setShowInstallDrawer(true);
         }, 800);
         return () => clearTimeout(timer);
+      } else {
+        // Otherwise, only show if they haven't seen it before
+        const hasSeenInstallDrawer = localStorage.getItem("hasSeenInstallDrawer");
+        if (!hasSeenInstallDrawer) {
+          const timer = setTimeout(() => {
+            setShowInstallDrawer(true);
+          }, 800);
+          return () => clearTimeout(timer);
+        }
       }
     }
-  }, []);
+  }, [searchParams]);
 
   const dismissInstallDrawer = () => {
     setShowInstallDrawer(false);

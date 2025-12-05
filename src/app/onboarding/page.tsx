@@ -1358,7 +1358,7 @@ function GeneratingStep() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      router.push("/home");
+      router.push("/home?fromOnboarding=true");
     }, 3000);
 
     return () => clearTimeout(timer);
