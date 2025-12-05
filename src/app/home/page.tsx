@@ -9,6 +9,31 @@ type Tab = "outreach" | "discover" | "chat" | "inbox";
 export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>("discover");
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [chatMessage, setChatMessage] = useState("");
+  const [chatMessages, setChatMessages] = useState([
+    { id: 1, sender: "emma", text: "Hey! I'm Emma, your creator assistant. How can I help you today?", time: "10:30 AM" },
+    { id: 2, sender: "emma", text: "Nike responded to your outreach — want me to help with a reply?", time: "10:31 AM" },
+    { id: 3, sender: "user", text: "Yes! Can you help me negotiate a better rate?", time: "10:35 AM" },
+    { id: 4, sender: "emma", text: "Based on your engagement (45K avg views, 8% engagement), I'd suggest asking for 20-30% more. Here's a draft:\n\n\"Thanks for reaching out! I'd love to partner with Nike. Given my recent performance, I'd propose $X. Happy to discuss further.\"", time: "10:36 AM" },
+  ]);
+
+  const handleSendChat = () => {
+    if (!chatMessage.trim()) return;
+    const newMessage = {
+      id: chatMessages.length + 1,
+      sender: "user" as const,
+      text: chatMessage,
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    };
+    setChatMessages([...chatMessages, newMessage]);
+    setChatMessage("");
+    setTimeout(() => {
+      setChatMessages((prev) => [
+        ...prev,
+        { id: prev.length + 1, sender: "emma", text: "Let me think about that...", time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) },
+      ]);
+    }, 1000);
+  };
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     {
@@ -59,7 +84,7 @@ export default function Home() {
       case "discover":
         return <DiscoverTab />;
       case "chat":
-        return <ChatTab />;
+        return <ChatTab messages={chatMessages} />;
       case "inbox":
         return <InboxTab />;
     }
@@ -154,31 +179,111 @@ export default function Home() {
         </AnimatePresence>
       </div>
 
-      {/* Bottom Navigation */}
+      {/* Bottom Navigation / Chat Input */}
       <nav className="px-6 pb-8 pt-3 bg-cream flex-shrink-0">
-        <div className="flex items-center justify-center gap-1 bg-white/80 backdrop-blur-xl rounded-full p-1.5 shadow-sm border border-border/50 mx-auto w-fit">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`relative flex flex-col items-center gap-0.5 py-2 px-5 rounded-full transition-all ${
-                activeTab === tab.id
-                  ? "text-terracotta"
-                  : "text-ink-lighter hover:text-ink-light"
-              }`}
-            >
-              {activeTab === tab.id && (
+        <motion.div 
+          layout
+          className="flex items-center justify-center gap-3"
+          transition={{ type: "spring", stiffness: 500, damping: 35 }}
+        >
+          <motion.div 
+            layout
+            className={`bg-white/80 backdrop-blur-xl rounded-full shadow-sm border border-border/50 overflow-hidden ${
+              activeTab === "chat" ? "flex-1" : ""
+            }`}
+            transition={{ type: "spring", stiffness: 500, damping: 35 }}
+          >
+            <AnimatePresence mode="popLayout" initial={false}>
+              {activeTab === "chat" ? (
                 <motion.div
-                  layoutId="activeTab"
-                  className="absolute inset-0 bg-ink/5 rounded-full"
-                  transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
-                />
+                  key="chat-input"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.08 }}
+                  className="flex items-center gap-2 p-1.5 pl-4 min-h-[66px]"
+                >
+                  <input
+                    type="text"
+                    value={chatMessage}
+                    onChange={(e) => setChatMessage(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleSendChat();
+                      }
+                    }}
+                    placeholder="Message Emma..."
+                    className="flex-1 text-sm text-ink placeholder:text-ink-lighter focus:outline-none bg-transparent"
+                  />
+                  <button
+                    onClick={handleSendChat}
+                    disabled={!chatMessage.trim()}
+                    className={`p-3 rounded-full transition-colors ${
+                      chatMessage.trim()
+                        ? "bg-terracotta text-white"
+                        : "text-ink-lighter"
+                    }`}
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="nav-tabs"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.08 }}
+                  className="flex items-center justify-center gap-1 p-1.5"
+                >
+                  {tabs.map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`relative flex flex-col items-center gap-0.5 py-2 px-5 rounded-full transition-all ${
+                        activeTab === tab.id
+                          ? "text-terracotta"
+                          : "text-ink-lighter hover:text-ink-light"
+                      }`}
+                    >
+                      {activeTab === tab.id && (
+                        <motion.div
+                          layoutId="activeTab"
+                          className="absolute inset-0 bg-ink/5 rounded-full"
+                          transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                        />
+                      )}
+                      <span className="relative z-10">{tab.icon}</span>
+                      <span className="relative z-10 text-[10px] font-medium">{tab.label}</span>
+                    </button>
+                  ))}
+                </motion.div>
               )}
-              <span className="relative z-10">{tab.icon}</span>
-              <span className="relative z-10 text-[10px] font-medium">{tab.label}</span>
-            </button>
-          ))}
-        </div>
+            </AnimatePresence>
+          </motion.div>
+          
+          {/* Close button */}
+          <AnimatePresence mode="popLayout">
+            {activeTab === "chat" && (
+              <motion.button
+                layout
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0 }}
+                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                onClick={() => setActiveTab("discover")}
+                className="p-3 rounded-full bg-white/80 backdrop-blur-xl border border-border/50 shadow-sm text-ink-lighter hover:text-ink transition-colors min-h-[66px] min-w-[66px] flex items-center justify-center flex-shrink-0"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </motion.button>
+            )}
+          </AnimatePresence>
+        </motion.div>
       </nav>
     </main>
   );
@@ -186,14 +291,136 @@ export default function Home() {
 
 // Outreach Tab
 function OutreachTab() {
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  
   const pastCampaigns = [
     { id: 1, week: "Nov 25 - Dec 1", responses: 8, deals: 2 },
     { id: 2, week: "Nov 18 - Nov 24", responses: 5, deals: 1 },
     { id: 3, week: "Nov 11 - Nov 17", responses: 12, deals: 3 },
   ];
 
+  const campaignBrands = [
+    { id: 1, name: "Glossier", category: "Beauty", email: "Hi Sarah,\n\nLove what Glossier is doing with clean beauty! I've been using your Cloud Paint for years and my audience always asks about it.\n\nWould love to explore a partnership for my upcoming skincare series.\n\nBest,\n[Your name]" },
+    { id: 2, name: "Allbirds", category: "Fashion", email: "Hi Team,\n\nAs someone passionate about sustainable fashion, I've been a huge fan of Allbirds' mission.\n\nI'd love to feature your new collection in my sustainability-focused content this month.\n\nLooking forward to connecting!\n\n[Your name]" },
+    { id: 3, name: "Athletic Greens", category: "Wellness", email: "Hey AG Team,\n\nI've been incorporating AG1 into my morning routine and my community has been asking about it non-stop.\n\nWould love to discuss a collaboration that feels authentic to my wellness content.\n\nCheers,\n[Your name]" },
+    { id: 4, name: "Notion", category: "Tech", email: "Hi Notion Team,\n\nAs a creator, Notion has transformed how I organize my content calendar and brand partnerships.\n\nI'd love to create a \"Creator's Workspace\" template and share how I use Notion with my audience.\n\nBest,\n[Your name]" },
+    { id: 5, name: "Oura", category: "Health Tech", email: "Hi there,\n\nI've been tracking my sleep with Oura Ring and the insights have been game-changing for my productivity content.\n\nWould love to share my experience with my health-conscious audience.\n\nWarm regards,\n[Your name]" },
+    { id: 6, name: "Gymshark", category: "Fitness", email: "Hey Gymshark Team,\n\nI've been wearing Gymshark for my workout content and my followers constantly ask where my gear is from.\n\nWould love to partner on showcasing the new collection!\n\nBest,\n[Your name]" },
+    { id: 7, name: "Ritual", category: "Wellness", email: "Hi Ritual Team,\n\nI'm passionate about transparent wellness brands, and Ritual's approach to vitamins really resonates with me.\n\nLet's chat about a potential collaboration!\n\nWarm regards,\n[Your name]" },
+    { id: 8, name: "Away", category: "Travel", email: "Hi Away Team,\n\nAs a creator who travels frequently, I've been eyeing your luggage for my upcoming content series.\n\nWould love to explore a partnership!\n\nBest,\n[Your name]" },
+    { id: 9, name: "Mejuri", category: "Jewelry", email: "Hi Mejuri Team,\n\nYour everyday luxury pieces are exactly what my audience loves. I'd love to feature them in my styling content.\n\nLooking forward to connecting!\n\n[Your name]" },
+    { id: 10, name: "Patagonia", category: "Outdoor", email: "Hi Patagonia Team,\n\nYour commitment to sustainability aligns perfectly with my content values. Would love to discuss a collaboration.\n\nBest,\n[Your name]" },
+    { id: 11, name: "Headspace", category: "Wellness", email: "Hi Headspace Team,\n\nMental health is central to my content, and I've been using your app daily. Would love to share my journey with my audience.\n\nWarm regards,\n[Your name]" },
+    { id: 12, name: "Casper", category: "Home", email: "Hi Casper Team,\n\nSleep content performs incredibly well with my audience. I'd love to feature your products in my wellness series.\n\nBest,\n[Your name]" },
+    { id: 13, name: "Warby Parker", category: "Eyewear", email: "Hi Warby Parker Team,\n\nI love your approach to affordable, stylish eyewear. Would be great to collaborate on some content!\n\nLooking forward to it,\n[Your name]" },
+    { id: 14, name: "Everlane", category: "Fashion", email: "Hi Everlane Team,\n\nTransparent pricing and sustainable fashion? That's exactly what my audience cares about. Let's work together!\n\nBest,\n[Your name]" },
+    { id: 15, name: "Calm", category: "Wellness", email: "Hi Calm Team,\n\nI've been using Calm for years and it's genuinely improved my sleep. Would love to share this with my followers.\n\nWarm regards,\n[Your name]" },
+    { id: 16, name: "Lululemon", category: "Fitness", email: "Hi Lululemon Team,\n\nYour athleisure pieces are staples in my wardrobe. Would love to create content featuring the new collection.\n\nBest,\n[Your name]" },
+    { id: 17, name: "Aesop", category: "Beauty", email: "Hi Aesop Team,\n\nYour products have been part of my skincare routine for years. I'd love to showcase them to my beauty-focused audience.\n\nWarm regards,\n[Your name]" },
+    { id: 18, name: "Brooklinen", category: "Home", email: "Hi Brooklinen Team,\n\nQuality bedding makes such a difference! I'd love to feature your products in my home content.\n\nBest,\n[Your name]" },
+    { id: 19, name: "Outdoor Voices", category: "Fitness", email: "Hi OV Team,\n\n'Doing Things' is my mantra! Would love to partner on some active lifestyle content.\n\nLooking forward to connecting!\n\n[Your name]" },
+    { id: 20, name: "Dyson", category: "Tech", email: "Hi Dyson Team,\n\nYour innovative products always generate buzz with my audience. Would love to discuss a collaboration.\n\nBest,\n[Your name]" },
+    { id: 21, name: "Recess", category: "Beverage", email: "Hi Recess Team,\n\nI love incorporating your drinks into my wellness content. Would be great to make it official!\n\nCheers,\n[Your name]" },
+    { id: 22, name: "Skims", category: "Fashion", email: "Hi Skims Team,\n\nYour inclusive approach to shapewear is something I'd love to highlight to my audience.\n\nBest,\n[Your name]" },
+    { id: 23, name: "Whoop", category: "Health Tech", email: "Hi Whoop Team,\n\nI've been tracking my fitness with Whoop and my followers are curious about it. Let's create some content together!\n\nBest,\n[Your name]" },
+    { id: 24, name: "Seed", category: "Wellness", email: "Hi Seed Team,\n\nGut health is a hot topic with my audience. I'd love to share my experience with your probiotics.\n\nWarm regards,\n[Your name]" },
+    { id: 25, name: "Therabody", category: "Wellness", email: "Hi Therabody Team,\n\nRecovery content is huge with my fitness audience. Would love to feature the Theragun in my routine videos.\n\nBest,\n[Your name]" },
+  ];
+
   return (
     <div className="h-full overflow-y-auto px-6 py-4">
+      {/* Ready for Review Card */}
+      <motion.button
+        onClick={() => setShowReviewModal(true)}
+        className="w-full bg-gradient-to-br from-terracotta to-terracotta/90 rounded-3xl p-5 mb-4 text-left relative overflow-hidden"
+        whileHover={{ scale: 1.01 }}
+        whileTap={{ scale: 0.99 }}
+      >
+        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-20 h-20 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+        
+        <div className="relative z-10">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
+            <span className="text-white/80 text-sm font-medium">Ready for review</span>
+          </div>
+          <h2 className="text-white text-lg font-semibold mb-1" style={{ fontFamily: "var(--font-display)" }}>
+            Your outreach is ready to go
+          </h2>
+          <p className="text-white/70 text-sm mb-3">
+            {campaignBrands.length} brands matched to your niche
+          </p>
+          <div className="flex items-center gap-2 text-white text-sm font-medium">
+            <span>Review &amp; approve</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </div>
+        </div>
+      </motion.button>
+
+      {/* Review Modal */}
+      <AnimatePresence>
+        {showReviewModal && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-ink/50 z-50"
+              onClick={() => setShowReviewModal(false)}
+            />
+            
+            {/* Modal */}
+            <motion.div
+              initial={{ opacity: 0, y: "100%" }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="fixed inset-x-0 bottom-0 z-50 bg-cream rounded-t-3xl h-[95vh] overflow-hidden flex flex-col"
+            >
+              {/* Modal Header */}
+              <div className="px-6 pt-6 pb-4 border-b border-border bg-cream sticky top-0">
+                <div className="flex items-center justify-between mb-1">
+                  <h2 className="text-xl font-semibold text-ink" style={{ fontFamily: "var(--font-display)" }}>
+                    Campaign Review
+                  </h2>
+                  <button
+                    onClick={() => setShowReviewModal(false)}
+                    className="w-8 h-8 rounded-full bg-white border border-border flex items-center justify-center text-ink-light hover:text-ink transition-colors"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <p className="text-sm text-ink-light">Review the brands and emails before sending</p>
+              </div>
+              
+              {/* Brand List */}
+              <div className="flex-1 overflow-y-auto px-6 py-4">
+                <div className="space-y-3">
+                  {campaignBrands.map((brand) => (
+                    <BrandEmailCard key={brand.id} brand={brand} />
+                  ))}
+                </div>
+              </div>
+              
+              {/* Modal Footer */}
+              <div className="px-6 py-4 border-t border-border bg-cream">
+                <button
+                  onClick={() => setShowReviewModal(false)}
+                  className="w-full py-3.5 rounded-2xl bg-terracotta text-white font-medium hover:bg-terracotta/90 transition-colors"
+                >
+                  Approve &amp; Send
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
       {/* Next Campaign Countdown */}
       <div className="bg-white rounded-3xl border border-border p-5 mb-4 flex items-center justify-between">
         <div>
@@ -273,6 +500,74 @@ function OutreachTab() {
         <div className="h-4" />
       </div>
     </div>
+  );
+}
+
+// Brand Email Card Component
+function BrandEmailCard({ brand }: { brand: { id: number; name: string; category: string; email: string } }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
+  return (
+    <motion.div
+      className="bg-white rounded-2xl border border-border overflow-hidden"
+      layout
+    >
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full flex items-center gap-4 p-4 text-left"
+      >
+        {/* Brand Avatar */}
+        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-terracotta/20 to-terracotta/40 flex items-center justify-center flex-shrink-0">
+          <span className="text-terracotta font-semibold text-lg">{brand.name[0]}</span>
+        </div>
+        
+        {/* Brand Info */}
+        <div className="flex-1 min-w-0">
+          <div className="font-semibold text-ink">{brand.name}</div>
+          <div className="text-sm text-ink-light">{brand.category}</div>
+        </div>
+        
+        {/* Expand Icon */}
+        <motion.div
+          animate={{ rotate: isExpanded ? 180 : 0 }}
+          transition={{ duration: 0.2 }}
+          className="text-ink-lighter"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </motion.div>
+      </button>
+      
+      {/* Email Preview */}
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="px-4 pb-4">
+              <div className="bg-cream rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-ink-light">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                    <polyline points="22,6 12,13 2,6" />
+                  </svg>
+                  <span className="text-xs font-medium text-ink-light">Draft email</span>
+                </div>
+                <p className="text-sm text-ink whitespace-pre-wrap leading-relaxed">{brand.email}</p>
+              </div>
+              <button className="w-full mt-3 py-2 text-sm font-medium text-terracotta hover:text-terracotta/80 transition-colors">
+                Edit this email
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }
 
@@ -412,61 +707,7 @@ function DiscoverTab() {
 }
 
 // Chat Tab - Conversation with Emma AI Assistant
-function ChatTab() {
-  const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      sender: "emma",
-      text: "Hey! I'm Emma, your creator assistant. How can I help you today?",
-      time: "10:30 AM",
-    },
-    {
-      id: 2,
-      sender: "emma",
-      text: "Nike responded to your outreach — want me to help with a reply?",
-      time: "10:31 AM",
-    },
-    {
-      id: 3,
-      sender: "user",
-      text: "Yes! Can you help me negotiate a better rate?",
-      time: "10:35 AM",
-    },
-    {
-      id: 4,
-      sender: "emma",
-      text: "Based on your engagement (45K avg views, 8% engagement), I'd suggest asking for 20-30% more. Here's a draft:\n\n\"Thanks for reaching out! I'd love to partner with Nike. Given my recent performance, I'd propose $X. Happy to discuss further.\"",
-      time: "10:36 AM",
-    },
-  ]);
-
-  const handleSend = () => {
-    if (!message.trim()) return;
-    
-    const newMessage = {
-      id: messages.length + 1,
-      sender: "user" as const,
-      text: message,
-      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    };
-    
-    setMessages([...messages, newMessage]);
-    setMessage("");
-    
-    setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: prev.length + 1,
-          sender: "emma",
-          text: "Let me think about that...",
-          time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        },
-      ]);
-    }, 1000);
-  };
-
+function ChatTab({ messages }: { messages: { id: number; sender: string; text: string; time: string }[] }) {
   return (
     <div className="h-full flex flex-col">
       {/* Messages */}
@@ -499,47 +740,6 @@ function ChatTab() {
             </div>
           );
         })}
-      </div>
-
-      {/* Input Area */}
-      <div className="px-4 pb-4 pt-2">
-        <div className="flex items-center gap-2 bg-white rounded-full border border-border px-4 py-2">
-          <input
-            type="text"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                handleSend();
-              }
-            }}
-            placeholder="Message Emma..."
-            className="flex-1 text-sm text-ink placeholder:text-ink-lighter focus:outline-none bg-transparent"
-          />
-          <button
-            onClick={handleSend}
-            disabled={!message.trim()}
-            className={`p-2 rounded-full transition-all ${
-              message.trim()
-                ? "bg-terracotta text-white"
-                : "text-ink-lighter"
-            }`}
-          >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M5 12h14M12 5l7 7-7 7" />
-            </svg>
-          </button>
-        </div>
       </div>
     </div>
   );
