@@ -384,80 +384,90 @@ function InstallDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
           >
             <div className="bg-cream rounded-t-3xl overflow-hidden shadow-2xl">
               {/* Handle */}
-              <div className="flex justify-center pt-3 pb-2">
+              <div className="flex justify-center pt-3 pb-1">
                 <div className="w-10 h-1 rounded-full bg-ink/10" />
               </div>
               
               {/* Content */}
-              <div className="px-6 pb-10 pt-2">
+              <div className="px-6 pb-8 pt-4">
                 {/* Header */}
-                <div className="text-center mb-6">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-terracotta to-terracotta/80 flex items-center justify-center mx-auto mb-4 shadow-lg">
-                    <svg width="32" height="32" viewBox="0 0 6988 874" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white">
-                      <path d="M349.605 517.363H266.088V765H63.1231V60.9349H354.46C538.974 60.9349 676.874 105.607 676.874 287.207C676.874 388.204 624.433 448.413 551.599 481.432L718.632 765H490.418L349.605 517.363ZM266.088 225.055V363.926H377.767C437.006 363.926 465.169 334.792 465.169 294.976C465.169 255.16 437.006 225.055 377.767 225.055H266.088Z" fill="currentColor"/>
-                      <path d="M63 225H271.5C309.884 225 341 256.116 341 294.5V294.5C341 332.884 309.884 364 271.5 364H63V225Z" fill="white"/>
-                    </svg>
-                  </div>
-                  <h2 className="text-xl font-semibold text-ink mb-2" style={{ fontFamily: "var(--font-display)" }}>
-                    Add to Home Screen
+                <div className="mb-6">
+                  <h2 className="text-2xl font-semibold text-ink mb-1" style={{ fontFamily: "var(--font-display)" }}>
+                    Install the app
                   </h2>
                   <p className="text-sm text-ink-light">
-                    Get the full app experience on your iPhone
+                    Add Retrograde to your home screen for the best experience
                   </p>
                 </div>
                 
-                {/* Steps */}
-                <div className="space-y-4 mb-8">
-                  {/* Step 1 */}
-                  <div className="flex items-start gap-4 bg-white rounded-2xl p-4 border border-border">
-                    <div className="w-8 h-8 rounded-full bg-terracotta/10 flex items-center justify-center flex-shrink-0">
-                      <span className="text-sm font-semibold text-terracotta">1</span>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm text-ink font-medium mb-2">
-                        Tap the Share button
-                      </p>
-                      <div className="inline-flex items-center gap-2 bg-cream rounded-lg px-3 py-2">
-                        {/* iOS Share Icon */}
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-terracotta">
-                          <path d="M12 2L12 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                          <path d="M8 6L12 2L16 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          <path d="M4 14V19C4 20.1046 4.89543 21 6 21H18C19.1046 21 20 20.1046 20 19V14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                {/* Steps - Connected Timeline */}
+                <div className="bg-white rounded-2xl p-5 mb-6 border border-border">
+                  <div className="relative">
+                    {/* Vertical connector line */}
+                    <div className="absolute left-5 top-10 bottom-10 w-px bg-border" />
+                    
+                    {/* Step 1 */}
+                    <div className="relative flex gap-4 pb-6">
+                      <div className="w-10 h-10 rounded-xl bg-white border border-border flex items-center justify-center flex-shrink-0 z-10">
+                        {/* Three dots menu icon (horizontal) */}
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-ink">
+                          <circle cx="5" cy="12" r="2" fill="currentColor"/>
+                          <circle cx="12" cy="12" r="2" fill="currentColor"/>
+                          <circle cx="19" cy="12" r="2" fill="currentColor"/>
                         </svg>
-                        <span className="text-xs text-ink-light">at the bottom of Safari</span>
+                      </div>
+                      <div className="flex-1 pt-2">
+                        <p className="text-sm text-ink">
+                          Tap <span className="font-semibold">• • •</span> in the bottom right
+                        </p>
                       </div>
                     </div>
-                  </div>
-                  
-                  {/* Step 2 */}
-                  <div className="flex items-start gap-4 bg-white rounded-2xl p-4 border border-border">
-                    <div className="w-8 h-8 rounded-full bg-terracotta/10 flex items-center justify-center flex-shrink-0">
-                      <span className="text-sm font-semibold text-terracotta">2</span>
+                    
+                    {/* Step 2 */}
+                    <div className="relative flex gap-4 pb-6">
+                      <div className="w-10 h-10 rounded-xl bg-white border border-border flex items-center justify-center flex-shrink-0 z-10">
+                        {/* iOS Share Icon */}
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-ink">
+                          <path d="M12 3L12 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                          <path d="M8 7L12 3L16 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M4 14V19C4 20.1046 4.89543 21 6 21H18C19.1046 21 20 20.1046 20 19V14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                        </svg>
+                      </div>
+                      <div className="flex-1 pt-2">
+                        <p className="text-sm text-ink">
+                          Tap <span className="font-semibold">Share</span>
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <p className="text-sm text-ink font-medium mb-2">
-                        Scroll down and tap
-                      </p>
-                      <div className="inline-flex items-center gap-2 bg-cream rounded-lg px-3 py-2">
+                    
+                    {/* Step 3 */}
+                    <div className="relative flex gap-4 pb-6">
+                      <div className="w-10 h-10 rounded-xl bg-white border border-border flex items-center justify-center flex-shrink-0 z-10">
                         {/* Add to Home Screen Icon */}
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-terracotta">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-ink">
                           <rect x="3" y="3" width="18" height="18" rx="4" stroke="currentColor" strokeWidth="2"/>
                           <path d="M12 8V16M8 12H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                         </svg>
-                        <span className="text-xs font-medium text-ink">Add to Home Screen</span>
+                      </div>
+                      <div className="flex-1 pt-2">
+                        <p className="text-sm text-ink">
+                          Tap <span className="font-semibold">Add to Home Screen</span>
+                        </p>
                       </div>
                     </div>
-                  </div>
-                  
-                  {/* Step 3 */}
-                  <div className="flex items-start gap-4 bg-white rounded-2xl p-4 border border-border">
-                    <div className="w-8 h-8 rounded-full bg-terracotta/10 flex items-center justify-center flex-shrink-0">
-                      <span className="text-sm font-semibold text-terracotta">3</span>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm text-ink font-medium">
-                        Tap <span className="text-terracotta font-semibold">Add</span> in the top right
-                      </p>
+                    
+                    {/* Step 4 */}
+                    <div className="relative flex gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-terracotta flex items-center justify-center flex-shrink-0 z-10">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-white">
+                          <path d="M5 12l5 5L20 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+                      <div className="flex-1 pt-2">
+                        <p className="text-sm text-ink">
+                          Tap <span className="font-semibold text-terracotta">Add</span> to confirm
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
