@@ -222,7 +222,7 @@ export default function Home() {
                     className="flex-1 text-sm text-ink placeholder:text-ink-lighter focus:outline-none bg-transparent"
                   />
                   <button
-                    onClick={handleSendChat}
+                    onClick={() => handleSendChat()}
                     disabled={!chatMessage.trim()}
                     className={`p-3 rounded-full transition-colors ${
                       chatMessage.trim()
