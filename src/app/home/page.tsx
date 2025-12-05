@@ -40,6 +40,36 @@ export default function Home() {
     handleSendChat(prompt);
   };
 
+  const handleLoadChat = (chatId: number) => {
+    // Load a past chat - in a real app this would fetch from a database
+    const sampleChats: Record<number, { id: number; sender: string; text: string; time: string }[]> = {
+      1: [
+        { id: 1, sender: "user", text: "Can you help me negotiate a better rate with Nike?", time: "10:30 AM" },
+        { id: 2, sender: "emma", text: "Based on your engagement (45K avg views, 8% engagement), I'd suggest asking for 20-30% more. Here's a draft:\n\n\"Thanks for reaching out! I'd love to partner with Nike. Given my recent performance, I'd propose $X. Happy to discuss further.\"", time: "10:31 AM" },
+      ],
+      2: [
+        { id: 1, sender: "user", text: "Help me plan my content for next week", time: "2:15 PM" },
+        { id: 2, sender: "emma", text: "Here's a suggested posting schedule for next week:\n\n• Monday: Behind-the-scenes reel\n• Wednesday: Product review\n• Friday: Q&A stories\n• Sunday: Weekly recap", time: "2:16 PM" },
+      ],
+      3: [
+        { id: 1, sender: "user", text: "Compare the Glossier and Fenty brand deal offers", time: "11:00 AM" },
+        { id: 2, sender: "emma", text: "Comparing the Glossier and Fenty offers:\n\n**Glossier:** $2,500 for 2 posts + stories\n**Fenty:** $3,000 for 3 posts\n\nFenty offers better per-post rate, but Glossier has less deliverables. I'd recommend Glossier for work-life balance.", time: "11:01 AM" },
+      ],
+      4: [
+        { id: 1, sender: "user", text: "Draft responses for my pending brand emails", time: "9:00 AM" },
+        { id: 2, sender: "emma", text: "I've drafted 3 responses for your pending emails:\n\n1. **Sephora** - Accepted with counter-offer\n2. **Revolve** - Polite decline (conflicts with existing deal)\n3. **Alo Yoga** - Request for more details", time: "9:02 AM" },
+      ],
+      5: [
+        { id: 1, sender: "user", text: "Review my current rate card", time: "3:30 PM" },
+        { id: 2, sender: "emma", text: "Your current rates are competitive for your niche. Based on industry standards:\n\n• Instagram Post: $500-800 ✓\n• Reel: $800-1200 ✓\n• Story Set: $300-500 ✓\n\nYou could increase reel rates by 15% given your engagement.", time: "3:32 PM" },
+      ],
+    };
+    
+    const loadedMessages = sampleChats[chatId] || [];
+    setChatMessages(loadedMessages);
+    setShowChatWelcome(false);
+  };
+
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     {
       id: "discover",
@@ -89,7 +119,7 @@ export default function Home() {
       case "discover":
         return <DiscoverTab />;
       case "chat":
-        return <ChatTab messages={chatMessages} onPromptClick={handlePromptClick} showWelcome={showChatWelcome} />;
+        return <ChatTab messages={chatMessages} onPromptClick={handlePromptClick} showWelcome={showChatWelcome} onLoadChat={handleLoadChat} />;
       case "inbox":
         return <InboxTab />;
     }
@@ -721,12 +751,16 @@ function DiscoverTab() {
 function ChatTab({ 
   messages, 
   onPromptClick,
-  showWelcome 
+  showWelcome,
+  onLoadChat
 }: { 
   messages: { id: number; sender: string; text: string; time: string }[];
   onPromptClick: (prompt: string) => void;
   showWelcome: boolean;
+  onLoadChat: (chatId: number) => void;
 }) {
+  const [showHistory, setShowHistory] = useState(false);
+  
   const suggestedPrompts = [
     "List the important emails I need to reply to",
     "What payments are due this week?",
@@ -734,64 +768,128 @@ function ChatTab({
     "Who do I need to follow up with?",
   ];
 
+  const pastChats = [
+    { id: 1, title: "Nike partnership negotiation", preview: "Based on your engagement, I'd suggest asking for 20-30% more...", date: "Today" },
+    { id: 2, title: "Content calendar planning", preview: "Here's a suggested posting schedule for next week...", date: "Yesterday" },
+    { id: 3, title: "Brand deal comparison", preview: "Comparing the Glossier and Fenty offers...", date: "Dec 3" },
+    { id: 4, title: "Email response drafts", preview: "I've drafted 3 responses for your pending emails...", date: "Dec 2" },
+    { id: 5, title: "Rate card review", preview: "Your current rates are competitive for your niche...", date: "Dec 1" },
+  ];
+
   return (
     <div className="h-full flex flex-col">
       {showWelcome ? (
-        /* Welcome Screen */
-        <motion.div 
-          className="flex-1 flex flex-col items-center justify-center px-6 py-8"
-          initial="hidden"
-          animate="visible"
-          variants={{
-            hidden: {},
-            visible: {
-              transition: {
-                staggerChildren: 0.08,
-                delayChildren: 0.1
-              }
-            }
-          }}
-        >
-          {/* Avatar */}
-          <motion.div 
-            className="w-20 h-20 rounded-full mb-6 overflow-hidden"
-            variants={{
-              hidden: { opacity: 0, scale: 0.8 },
-              visible: { opacity: 1, scale: 1, transition: { type: "spring", stiffness: 300, damping: 20 } }
-            }}
-          >
-            <img src="/Emma.png" alt="Emma" className="w-full h-full object-cover" />
-          </motion.div>
-          
-          {/* Greeting */}
-          <motion.h2 
-            className="text-2xl font-semibold text-ink mb-8" 
-            style={{ fontFamily: "var(--font-display)" }}
-            variants={{
-              hidden: { opacity: 0, y: 10 },
-              visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 25 } }
-            }}
-          >
-            Hey, how can I help?
-          </motion.h2>
-          
-          {/* Prompt Suggestions */}
-          <div className="w-full space-y-3">
-            {suggestedPrompts.map((prompt, index) => (
-              <motion.button
-                key={prompt}
-                variants={{
-                  hidden: { opacity: 0, y: 15 },
-                  visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 25 } }
-                }}
-                onClick={() => onPromptClick(prompt)}
-                className="w-full text-left px-5 py-4 bg-white rounded-2xl border border-border text-ink hover:border-ink/20 hover:shadow-sm transition-all"
+        showHistory ? (
+          /* Chat History */
+          <div className="flex-1 flex flex-col px-6 py-4">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-ink" style={{ fontFamily: "var(--font-display)" }}>
+                Past Chats
+              </h2>
+              <button
+                onClick={() => setShowHistory(false)}
+                className="text-sm font-medium text-terracotta hover:text-terracotta/80 transition-colors"
               >
-                {prompt}
-              </motion.button>
-            ))}
+                New Chat
+              </button>
+            </div>
+            
+            {/* Chat List */}
+            <div className="flex-1 overflow-y-auto space-y-2">
+              {pastChats.map((chat) => (
+                <button
+                  key={chat.id}
+                  onClick={() => {
+                    onLoadChat(chat.id);
+                    setShowHistory(false);
+                  }}
+                  className="w-full text-left p-4 bg-white rounded-2xl border border-border hover:border-ink/20 transition-all"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-ink mb-1 truncate">{chat.title}</div>
+                      <div className="text-sm text-ink-light line-clamp-2">{chat.preview}</div>
+                    </div>
+                    <span className="text-xs text-ink-lighter flex-shrink-0">{chat.date}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
-        </motion.div>
+        ) : (
+          /* Welcome Screen */
+          <motion.div 
+            className="flex-1 flex flex-col items-center justify-center px-6 py-8"
+            initial="hidden"
+            animate="visible"
+            variants={{
+              hidden: {},
+              visible: {
+                transition: {
+                  staggerChildren: 0.08,
+                  delayChildren: 0.1
+                }
+              }
+            }}
+          >
+            {/* Avatar */}
+            <motion.div 
+              className="w-20 h-20 rounded-full mb-6 overflow-hidden"
+              variants={{
+                hidden: { opacity: 0, scale: 0.8 },
+                visible: { opacity: 1, scale: 1, transition: { type: "spring", stiffness: 300, damping: 20 } }
+              }}
+            >
+              <img src="/Emma.png" alt="Emma" className="w-full h-full object-cover" />
+            </motion.div>
+            
+            {/* Greeting */}
+            <motion.h2 
+              className="text-2xl font-semibold text-ink mb-8" 
+              style={{ fontFamily: "var(--font-display)" }}
+              variants={{
+                hidden: { opacity: 0, y: 10 },
+                visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 25 } }
+              }}
+            >
+              Hey, how can I help?
+            </motion.h2>
+            
+            {/* Prompt Suggestions */}
+            <div className="w-full space-y-3">
+              {suggestedPrompts.map((prompt) => (
+                <motion.button
+                  key={prompt}
+                  variants={{
+                    hidden: { opacity: 0, y: 15 },
+                    visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 25 } }
+                  }}
+                  onClick={() => onPromptClick(prompt)}
+                  className="w-full text-left px-5 py-4 bg-white rounded-2xl border border-border text-ink hover:border-ink/20 hover:shadow-sm transition-all"
+                >
+                  {prompt}
+                </motion.button>
+              ))}
+            </div>
+            
+            {/* History Link */}
+            <motion.button
+              onClick={() => setShowHistory(true)}
+              className="mt-6 flex items-center gap-2 text-sm text-ink-lighter hover:text-ink transition-colors"
+              variants={{
+                hidden: { opacity: 0 },
+                visible: { opacity: 1, transition: { delay: 0.3 } }
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+              View past chats
+            </motion.button>
+          </motion.div>
+        )
       ) : (
         /* Messages */
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
