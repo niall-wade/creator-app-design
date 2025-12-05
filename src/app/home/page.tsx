@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 
@@ -12,6 +12,31 @@ export default function Home() {
   const [chatMessage, setChatMessage] = useState("");
   const [chatMessages, setChatMessages] = useState<{ id: number; sender: string; text: string; time: string }[]>([]);
   const [showChatWelcome, setShowChatWelcome] = useState(true);
+  const [showInstallDrawer, setShowInstallDrawer] = useState(false);
+
+  // Check if user is viewing in browser (not installed as PWA)
+  useEffect(() => {
+    // Check if running as installed PWA
+    const isStandalone = 
+      window.matchMedia('(display-mode: standalone)').matches || 
+      (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+    
+    // Only show install prompt if not already installed as PWA
+    if (!isStandalone) {
+      const hasSeenInstallDrawer = localStorage.getItem("hasSeenInstallDrawer");
+      if (!hasSeenInstallDrawer) {
+        const timer = setTimeout(() => {
+          setShowInstallDrawer(true);
+        }, 800);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, []);
+
+  const dismissInstallDrawer = () => {
+    setShowInstallDrawer(false);
+    localStorage.setItem("hasSeenInstallDrawer", "true");
+  };
 
   const handleSendChat = (message?: string) => {
     const textToSend = message || chatMessage;
@@ -326,7 +351,130 @@ export default function Home() {
           </AnimatePresence>
         </motion.div>
       </nav>
+
+      {/* Install to Home Screen Drawer */}
+      <InstallDrawer isOpen={showInstallDrawer} onClose={dismissInstallDrawer} />
     </main>
+  );
+}
+
+// Add to Home Screen Drawer Component
+function InstallDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 bg-ink/40 z-50"
+            onClick={onClose}
+          />
+          
+          {/* Drawer */}
+          <motion.div
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ type: "spring", damping: 28, stiffness: 350 }}
+            className="fixed inset-x-0 bottom-0 z-50 max-w-md mx-auto"
+          >
+            <div className="bg-cream rounded-t-3xl overflow-hidden shadow-2xl">
+              {/* Handle */}
+              <div className="flex justify-center pt-3 pb-2">
+                <div className="w-10 h-1 rounded-full bg-ink/10" />
+              </div>
+              
+              {/* Content */}
+              <div className="px-6 pb-10 pt-2">
+                {/* Header */}
+                <div className="text-center mb-6">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-terracotta to-terracotta/80 flex items-center justify-center mx-auto mb-4 shadow-lg">
+                    <svg width="32" height="32" viewBox="0 0 6988 874" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white">
+                      <path d="M349.605 517.363H266.088V765H63.1231V60.9349H354.46C538.974 60.9349 676.874 105.607 676.874 287.207C676.874 388.204 624.433 448.413 551.599 481.432L718.632 765H490.418L349.605 517.363ZM266.088 225.055V363.926H377.767C437.006 363.926 465.169 334.792 465.169 294.976C465.169 255.16 437.006 225.055 377.767 225.055H266.088Z" fill="currentColor"/>
+                      <path d="M63 225H271.5C309.884 225 341 256.116 341 294.5V294.5C341 332.884 309.884 364 271.5 364H63V225Z" fill="white"/>
+                    </svg>
+                  </div>
+                  <h2 className="text-xl font-semibold text-ink mb-2" style={{ fontFamily: "var(--font-display)" }}>
+                    Add to Home Screen
+                  </h2>
+                  <p className="text-sm text-ink-light">
+                    Get the full app experience on your iPhone
+                  </p>
+                </div>
+                
+                {/* Steps */}
+                <div className="space-y-4 mb-8">
+                  {/* Step 1 */}
+                  <div className="flex items-start gap-4 bg-white rounded-2xl p-4 border border-border">
+                    <div className="w-8 h-8 rounded-full bg-terracotta/10 flex items-center justify-center flex-shrink-0">
+                      <span className="text-sm font-semibold text-terracotta">1</span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-ink font-medium mb-2">
+                        Tap the Share button
+                      </p>
+                      <div className="inline-flex items-center gap-2 bg-cream rounded-lg px-3 py-2">
+                        {/* iOS Share Icon */}
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-terracotta">
+                          <path d="M12 2L12 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                          <path d="M8 6L12 2L16 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M4 14V19C4 20.1046 4.89543 21 6 21H18C19.1046 21 20 20.1046 20 19V14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                        </svg>
+                        <span className="text-xs text-ink-light">at the bottom of Safari</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Step 2 */}
+                  <div className="flex items-start gap-4 bg-white rounded-2xl p-4 border border-border">
+                    <div className="w-8 h-8 rounded-full bg-terracotta/10 flex items-center justify-center flex-shrink-0">
+                      <span className="text-sm font-semibold text-terracotta">2</span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-ink font-medium mb-2">
+                        Scroll down and tap
+                      </p>
+                      <div className="inline-flex items-center gap-2 bg-cream rounded-lg px-3 py-2">
+                        {/* Add to Home Screen Icon */}
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-terracotta">
+                          <rect x="3" y="3" width="18" height="18" rx="4" stroke="currentColor" strokeWidth="2"/>
+                          <path d="M12 8V16M8 12H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                        </svg>
+                        <span className="text-xs font-medium text-ink">Add to Home Screen</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Step 3 */}
+                  <div className="flex items-start gap-4 bg-white rounded-2xl p-4 border border-border">
+                    <div className="w-8 h-8 rounded-full bg-terracotta/10 flex items-center justify-center flex-shrink-0">
+                      <span className="text-sm font-semibold text-terracotta">3</span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-ink font-medium">
+                        Tap <span className="text-terracotta font-semibold">Add</span> in the top right
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* CTA */}
+                <button
+                  onClick={onClose}
+                  className="w-full py-4 rounded-2xl bg-ink text-cream font-medium hover:bg-ink/90 transition-colors"
+                >
+                  Got it
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
   );
 }
 
