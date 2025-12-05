@@ -587,10 +587,10 @@ function DiscoverTab() {
   const [activeTab, setActiveTab] = useState<"trending" | "suggested">("trending");
 
   const trendingCreators = [
-    { name: "Emma Chamberlain", handle: "@emmachamberlain", followers: "12M", category: "Lifestyle", initial: "E", rank: 1 },
-    { name: "Bretman Rock", handle: "@bretmanrock", followers: "8.5M", category: "Beauty", initial: "B", rank: 2 },
-    { name: "Wisdom Kaye", handle: "@wisdm", followers: "4.2M", category: "Fashion", initial: "W", rank: 3 },
-    { name: "Charli D&apos;Amelio", handle: "@charlidamelio", followers: "55M", category: "Dance", initial: "C", rank: 4 },
+    { name: "Emma Chamberlain", handle: "@emmachamberlain", followers: "12M", category: "Lifestyle", initial: "E", rank: 1, image: "/emma chamberlain.jpg" },
+    { name: "Bretman Rock", handle: "@bretmanrock", followers: "8.5M", category: "Beauty", initial: "B", rank: 2, image: "/bretman rock.jpg" },
+    { name: "Wisdom Kaye", handle: "@wisdm", followers: "4.2M", category: "Fashion", initial: "W", rank: 3, image: "/wisdom kaye.jpg" },
+    { name: "Charli D'Amelio", handle: "@charlidamelio", followers: "55M", category: "Dance", initial: "C", rank: 4, image: "/Charli Damelio.jpg" },
   ];
 
   const suggestedCreators = [
@@ -664,8 +664,8 @@ function DiscoverTab() {
             <div key={creator.handle}>
               <div className="flex items-center gap-4 px-5 py-4">
                 {/* Avatar */}
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-terracotta/20 to-terracotta/40 flex items-center justify-center flex-shrink-0">
-                  <span className="text-terracotta font-semibold text-xl">{creator.initial}</span>
+                <div className="w-14 h-14 rounded-2xl overflow-hidden flex-shrink-0">
+                  <img src={creator.image} alt={creator.name} className="w-full h-full object-cover" />
                 </div>
                 
                 {/* Info */}
