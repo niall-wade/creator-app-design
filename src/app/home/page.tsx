@@ -10,29 +10,34 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>("discover");
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [chatMessage, setChatMessage] = useState("");
-  const [chatMessages, setChatMessages] = useState([
-    { id: 1, sender: "emma", text: "Hey! I'm Emma, your creator assistant. How can I help you today?", time: "10:30 AM" },
-    { id: 2, sender: "emma", text: "Nike responded to your outreach — want me to help with a reply?", time: "10:31 AM" },
-    { id: 3, sender: "user", text: "Yes! Can you help me negotiate a better rate?", time: "10:35 AM" },
-    { id: 4, sender: "emma", text: "Based on your engagement (45K avg views, 8% engagement), I'd suggest asking for 20-30% more. Here's a draft:\n\n\"Thanks for reaching out! I'd love to partner with Nike. Given my recent performance, I'd propose $X. Happy to discuss further.\"", time: "10:36 AM" },
-  ]);
+  const [chatMessages, setChatMessages] = useState<{ id: number; sender: string; text: string; time: string }[]>([]);
+  const [showChatWelcome, setShowChatWelcome] = useState(true);
 
-  const handleSendChat = () => {
-    if (!chatMessage.trim()) return;
+  const handleSendChat = (message?: string) => {
+    const textToSend = message || chatMessage;
+    if (!textToSend.trim()) return;
+    
+    setShowChatWelcome(false);
+    
     const newMessage = {
       id: chatMessages.length + 1,
       sender: "user" as const,
-      text: chatMessage,
+      text: textToSend,
       time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
     setChatMessages([...chatMessages, newMessage]);
     setChatMessage("");
+    
     setTimeout(() => {
       setChatMessages((prev) => [
         ...prev,
         { id: prev.length + 1, sender: "emma", text: "Let me think about that...", time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) },
       ]);
     }, 1000);
+  };
+
+  const handlePromptClick = (prompt: string) => {
+    handleSendChat(prompt);
   };
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
@@ -84,7 +89,7 @@ export default function Home() {
       case "discover":
         return <DiscoverTab />;
       case "chat":
-        return <ChatTab messages={chatMessages} />;
+        return <ChatTab messages={chatMessages} onPromptClick={handlePromptClick} showWelcome={showChatWelcome} />;
       case "inbox":
         return <InboxTab />;
     }
@@ -188,7 +193,7 @@ export default function Home() {
         >
           <motion.div 
             layout
-            className={`bg-white/80 backdrop-blur-xl rounded-full shadow-sm border border-border/50 overflow-hidden ${
+            className={`bg-white/80 backdrop-blur-xl rounded-full border border-border overflow-hidden ${
               activeTab === "chat" ? "flex-1" : ""
             }`}
             transition={{ type: "spring", stiffness: 500, damping: 35 }}
@@ -242,7 +247,13 @@ export default function Home() {
                   {tabs.map((tab) => (
                     <button
                       key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
+                      onClick={() => {
+                        if (tab.id === "chat") {
+                          setShowChatWelcome(true);
+                          setChatMessages([]);
+                        }
+                        setActiveTab(tab.id);
+                      }}
                       className={`relative flex flex-col items-center gap-0.5 py-2 px-5 rounded-full transition-all ${
                         activeTab === tab.id
                           ? "text-terracotta"
@@ -275,7 +286,7 @@ export default function Home() {
                 exit={{ opacity: 0, scale: 0 }}
                 transition={{ type: "spring", stiffness: 500, damping: 30 }}
                 onClick={() => setActiveTab("discover")}
-                className="p-3 rounded-full bg-white/80 backdrop-blur-xl border border-border/50 shadow-sm text-ink-lighter hover:text-ink transition-colors min-h-[66px] min-w-[66px] flex items-center justify-center flex-shrink-0"
+                className="p-3 rounded-full bg-white/80 backdrop-blur-xl border border-border text-ink-lighter hover:text-ink transition-colors min-h-[66px] min-w-[66px] flex items-center justify-center flex-shrink-0"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M18 6L6 18M6 6l12 12" />
@@ -378,7 +389,7 @@ function OutreachTab() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="fixed inset-x-0 bottom-0 z-50 bg-cream rounded-t-3xl h-[95vh] overflow-hidden flex flex-col"
+              className="fixed inset-x-0 bottom-0 z-50 bg-cream rounded-t-3xl h-[75vh] overflow-hidden flex flex-col"
             >
               {/* Modal Header */}
               <div className="px-6 pt-6 pb-4 border-b border-border bg-cream sticky top-0">
@@ -707,40 +718,113 @@ function DiscoverTab() {
 }
 
 // Chat Tab - Conversation with Emma AI Assistant
-function ChatTab({ messages }: { messages: { id: number; sender: string; text: string; time: string }[] }) {
+function ChatTab({ 
+  messages, 
+  onPromptClick,
+  showWelcome 
+}: { 
+  messages: { id: number; sender: string; text: string; time: string }[];
+  onPromptClick: (prompt: string) => void;
+  showWelcome: boolean;
+}) {
+  const suggestedPrompts = [
+    "List the important emails I need to reply to",
+    "What payments are due this week?",
+    "Summarize today's top priorities",
+    "Who do I need to follow up with?",
+  ];
+
   return (
     <div className="h-full flex flex-col">
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
-        {messages.map((msg, index) => {
-          const isUser = msg.sender === "user";
-          const showEmmaLabel = !isUser && (index === 0 || messages[index - 1].sender === "user");
+      {showWelcome ? (
+        /* Welcome Screen */
+        <motion.div 
+          className="flex-1 flex flex-col items-center justify-center px-6 py-8"
+          initial="hidden"
+          animate="visible"
+          variants={{
+            hidden: {},
+            visible: {
+              transition: {
+                staggerChildren: 0.08,
+                delayChildren: 0.1
+              }
+            }
+          }}
+        >
+          {/* Avatar */}
+          <motion.div 
+            className="w-20 h-20 rounded-full mb-6 overflow-hidden"
+            variants={{
+              hidden: { opacity: 0, scale: 0.8 },
+              visible: { opacity: 1, scale: 1, transition: { type: "spring", stiffness: 300, damping: 20 } }
+            }}
+          >
+            <img src="/Emma.png" alt="Emma" className="w-full h-full object-cover" />
+          </motion.div>
           
-          return (
-            <div key={msg.id}>
-              {showEmmaLabel && (
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-6 h-6 rounded-full bg-terracotta flex items-center justify-center">
-                    <span className="text-white text-[10px] font-medium">E</span>
+          {/* Greeting */}
+          <motion.h2 
+            className="text-2xl font-semibold text-ink mb-8" 
+            style={{ fontFamily: "var(--font-display)" }}
+            variants={{
+              hidden: { opacity: 0, y: 10 },
+              visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 25 } }
+            }}
+          >
+            Hey, how can I help?
+          </motion.h2>
+          
+          {/* Prompt Suggestions */}
+          <div className="w-full space-y-3">
+            {suggestedPrompts.map((prompt, index) => (
+              <motion.button
+                key={prompt}
+                variants={{
+                  hidden: { opacity: 0, y: 15 },
+                  visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 25 } }
+                }}
+                onClick={() => onPromptClick(prompt)}
+                className="w-full text-left px-5 py-4 bg-white rounded-2xl border border-border text-ink hover:border-ink/20 hover:shadow-sm transition-all"
+              >
+                {prompt}
+              </motion.button>
+            ))}
+          </div>
+        </motion.div>
+      ) : (
+        /* Messages */
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
+          {messages.map((msg, index) => {
+            const isUser = msg.sender === "user";
+            const showEmmaLabel = !isUser && (index === 0 || messages[index - 1].sender === "user");
+            
+            return (
+              <div key={msg.id}>
+                {showEmmaLabel && (
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-6 h-6 rounded-full bg-terracotta flex items-center justify-center">
+                      <span className="text-white text-[10px] font-medium">E</span>
+                    </div>
+                    <span className="text-xs font-medium text-ink">Emma</span>
                   </div>
-                  <span className="text-xs font-medium text-ink">Emma</span>
-                </div>
-              )}
-              <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
-                <div
-                  className={`max-w-[85%] px-4 py-2.5 text-sm ${
-                    isUser
-                      ? "bg-ink text-cream rounded-2xl rounded-br-sm"
-                      : "bg-white text-ink rounded-2xl rounded-tl-sm"
-                  }`}
-                >
-                  <p className="whitespace-pre-wrap">{msg.text}</p>
+                )}
+                <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
+                  <div
+                    className={`max-w-[85%] px-4 py-2.5 text-sm ${
+                      isUser
+                        ? "bg-ink text-cream rounded-2xl rounded-br-sm"
+                        : "bg-white text-ink rounded-2xl rounded-tl-sm"
+                    }`}
+                  >
+                    <p className="whitespace-pre-wrap">{msg.text}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
