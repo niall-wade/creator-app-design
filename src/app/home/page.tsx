@@ -7,7 +7,7 @@ import Link from "next/link";
 type Tab = "outreach" | "discover" | "chat" | "inbox";
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<Tab>("discover");
+  const [activeTab, setActiveTab] = useState<Tab>("outreach");
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [chatMessage, setChatMessage] = useState("");
   const [chatMessages, setChatMessages] = useState<{ id: number; sender: string; text: string; time: string }[]>([]);
@@ -117,21 +117,21 @@ export default function Home() {
       ),
     },
     {
-      id: "chat",
-      label: "Chat",
-      icon: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z" />
-        </svg>
-      ),
-    },
-    {
       id: "inbox",
       label: "Inbox",
       icon: (
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M22 12H16L14 15H10L8 12H2" />
           <path d="M5.45 5.11L2 12V18C2 18.5304 2.21071 19.0391 2.58579 19.4142C2.96086 19.7893 3.46957 20 4 20H20C20.5304 20 21.0391 19.7893 21.4142 19.4142C21.7893 19.0391 22 18.5304 22 18V12L18.55 5.11C18.3844 4.77679 18.1292 4.49637 17.813 4.30028C17.4967 4.10419 17.1321 4.0002 16.76 4H7.24C6.86792 4.0002 6.50326 4.10419 6.18704 4.30028C5.87083 4.49637 5.61558 4.77679 5.45 5.11Z" />
+        </svg>
+      ),
+    },
+    {
+      id: "chat",
+      label: "Chat",
+      icon: (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z" />
         </svg>
       ),
     },

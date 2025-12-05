@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 
 // Types
@@ -1353,6 +1354,16 @@ function EmailStep({
 
 // Step 20: Generating (Final)
 function GeneratingStep() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      router.push("/home");
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [router]);
+
   return (
     <div className="flex-1 flex flex-col items-center justify-center text-center">
       <div className="mb-8">
