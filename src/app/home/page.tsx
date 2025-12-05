@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -8,6 +8,14 @@ import Link from "next/link";
 type Tab = "outreach" | "discover" | "chat" | "inbox";
 
 export default function Home() {
+  return (
+    <Suspense fallback={<div className="h-dvh bg-cream" />}>
+      <HomeContent />
+    </Suspense>
+  );
+}
+
+function HomeContent() {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<Tab>("outreach");
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -110,13 +118,23 @@ export default function Home() {
   };
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
+    // {
+    //   id: "discover",
+    //   label: "Discover",
+    //   icon: (
+    //     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    //       <circle cx="12" cy="12" r="10" />
+    //       <path d="M16.24 7.76L14.12 14.12L7.76 16.24L9.88 9.88L16.24 7.76Z" />
+    //     </svg>
+    //   ),
+    // },
     {
-      id: "discover",
-      label: "Discover",
+      id: "inbox",
+      label: "Inbox",
       icon: (
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="10" />
-          <path d="M16.24 7.76L14.12 14.12L7.76 16.24L9.88 9.88L16.24 7.76Z" />
+          <path d="M22 12H16L14 15H10L8 12H2" />
+          <path d="M5.45 5.11L2 12V18C2 18.5304 2.21071 19.0391 2.58579 19.4142C2.96086 19.7893 3.46957 20 4 20H20C20.5304 20 21.0391 19.7893 21.4142 19.4142C21.7893 19.0391 22 18.5304 22 18V12L18.55 5.11C18.3844 4.77679 18.1292 4.49637 17.813 4.30028C17.4967 4.10419 17.1321 4.0002 16.76 4H7.24C6.86792 4.0002 6.50326 4.10419 6.18704 4.30028C5.87083 4.49637 5.61558 4.77679 5.45 5.11Z" />
         </svg>
       ),
     },
@@ -127,16 +145,6 @@ export default function Home() {
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M22 2L11 13" />
           <path d="M22 2L15 22L11 13L2 9L22 2Z" />
-        </svg>
-      ),
-    },
-    {
-      id: "inbox",
-      label: "Inbox",
-      icon: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M22 12H16L14 15H10L8 12H2" />
-          <path d="M5.45 5.11L2 12V18C2 18.5304 2.21071 19.0391 2.58579 19.4142C2.96086 19.7893 3.46957 20 4 20H20C20.5304 20 21.0391 19.7893 21.4142 19.4142C21.7893 19.0391 22 18.5304 22 18V12L18.55 5.11C18.3844 4.77679 18.1292 4.49637 17.813 4.30028C17.4967 4.10419 17.1321 4.0002 16.76 4H7.24C6.86792 4.0002 6.50326 4.10419 6.18704 4.30028C5.87083 4.49637 5.61558 4.77679 5.45 5.11Z" />
         </svg>
       ),
     },
@@ -354,7 +362,7 @@ export default function Home() {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0 }}
                 transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                onClick={() => setActiveTab("discover")}
+                onClick={() => setActiveTab("outreach")}
                 className="p-3 rounded-full bg-white/80 backdrop-blur-xl border border-border text-ink-lighter hover:text-ink transition-colors min-h-[66px] min-w-[66px] flex items-center justify-center flex-shrink-0"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1198,13 +1206,7 @@ function InboxTab() {
           {/* Labels Applied Card */}
           <div className="bg-white rounded-3xl border border-border overflow-hidden">
             <div className="p-5 pb-4">
-              <div className="flex items-center gap-2">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-ink-light">
-                  <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
-                  <line x1="7" y1="7" x2="7.01" y2="7" />
-                </svg>
-                <span className="text-xl font-semibold text-ink" style={{ fontFamily: "var(--font-display)" }}>Labels applied</span>
-              </div>
+              <span className="text-xl font-semibold text-ink" style={{ fontFamily: "var(--font-display)" }}>Labels applied</span>
               <p className="text-sm text-ink-light mt-1">{totalEmails} emails categorized</p>
             </div>
             
