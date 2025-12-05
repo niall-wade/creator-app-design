@@ -155,13 +155,13 @@ export default function Home() {
       </div>
 
       {/* Bottom Navigation */}
-      <nav className="px-6 pb-8 pt-3 bg-cream flex-shrink-0">
-        <div className="flex items-center justify-center gap-1 bg-white/80 backdrop-blur-xl rounded-full p-1.5 shadow-sm border border-border/50 mx-auto w-fit">
+      <nav className="px-6 pb-10 pt-2 bg-cream flex-shrink-0">
+        <div className="flex items-center justify-center gap-0.5 bg-white/80 backdrop-blur-xl rounded-full p-1 shadow-sm border border-border/50 mx-auto w-fit">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`relative flex flex-col items-center gap-0.5 py-2 px-5 rounded-full transition-all ${
+              className={`relative flex flex-col items-center gap-0 py-1.5 px-4 rounded-full transition-all ${
                 activeTab === tab.id
                   ? "text-terracotta"
                   : "text-ink-lighter hover:text-ink-light"
@@ -174,8 +174,8 @@ export default function Home() {
                   transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                 />
               )}
-              <span className="relative z-10">{tab.icon}</span>
-              <span className="relative z-10 text-[10px] font-medium">{tab.label}</span>
+              <span className="relative z-10 [&>svg]:w-5 [&>svg]:h-5">{tab.icon}</span>
+              <span className="relative z-10 text-[9px] font-medium">{tab.label}</span>
             </button>
           ))}
         </div>
