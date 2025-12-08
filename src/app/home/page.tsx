@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 
-type Tab = "outreach" | "discover" | "chat" | "inbox";
+type Tab = "outreach" | "discover" | "chat" | "inbox" | "deals";
 
 export default function Home() {
   return (
@@ -17,6 +17,7 @@ export default function Home() {
 
 function HomeContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>("outreach");
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [chatMessage, setChatMessage] = useState("");
@@ -118,16 +119,6 @@ function HomeContent() {
   };
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    // {
-    //   id: "discover",
-    //   label: "Discover",
-    //   icon: (
-    //     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    //       <circle cx="12" cy="12" r="10" />
-    //       <path d="M16.24 7.76L14.12 14.12L7.76 16.24L9.88 9.88L16.24 7.76Z" />
-    //     </svg>
-    //   ),
-    // },
     {
       id: "inbox",
       label: "Inbox",
@@ -149,6 +140,16 @@ function HomeContent() {
       ),
     },
     {
+      id: "deals",
+      label: "Deals",
+      icon: (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+          <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+        </svg>
+      ),
+    },
+    {
       id: "chat",
       label: "Chat",
       icon: (
@@ -161,6 +162,8 @@ function HomeContent() {
 
   const renderContent = () => {
     switch (activeTab) {
+      case "deals":
+        return <DealsTab />;
       case "outreach":
         return <OutreachTab />;
       case "discover":
@@ -190,12 +193,10 @@ function HomeContent() {
         <div className="relative">
           <button 
             onClick={() => setShowProfileMenu(!showProfileMenu)}
-            className="w-10 h-10 rounded-full bg-gradient-to-br from-terracotta/20 to-terracotta/30 flex items-center justify-center overflow-hidden"
+            className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-900 to-purple-900 flex items-center justify-center overflow-hidden"
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="8" r="4" fill="#E25D33" fillOpacity="0.6"/>
-              <path d="M4 20C4 16.6863 7.58172 14 12 14C16.4183 14 20 16.6863 20 20V21H4V20Z" fill="#E25D33" fillOpacity="0.6"/>
-            </svg>
+            {/* Dark abstract avatar */}
+            <div className="w-full h-full bg-gradient-to-br from-indigo-800 via-purple-900 to-indigo-950" />
           </button>
           
           <AnimatePresence>
@@ -512,220 +513,480 @@ function InstallDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
 
 // Outreach Tab
 function OutreachTab() {
-  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [outreachState, setOutreachState] = useState<"idle" | "selecting" | "loading" | "results" | "history-detail">("idle");
+  const [brandCount, setBrandCount] = useState(10);
+  const [generatedBrands, setGeneratedBrands] = useState<{ id: number; name: string; category: string; email: string; contactEmail: string }[]>([]);
+  const [selectedHistoryId, setSelectedHistoryId] = useState<number | null>(null);
   
-  const pastCampaigns = [
-    { id: 1, week: "Nov 25 - Dec 1", responses: 8, deals: 2 },
-    { id: 2, week: "Nov 18 - Nov 24", responses: 5, deals: 1 },
-    { id: 3, week: "Nov 11 - Nov 17", responses: 12, deals: 3 },
+  const usageRemaining = 1000;
+  const usageUsed = 47;
+
+  // History of past brand matches with their brands
+  const brandMatchHistory = [
+    { 
+      id: 1, 
+      date: "Dec 5, 2025", 
+      brands: [
+        { id: 1, name: "Glossier", category: "Beauty", email: "Hi Sarah,\n\nLove what Glossier is doing with clean beauty! I've been using your Cloud Paint for years and my audience always asks about it.\n\nWould love to explore a partnership for my upcoming skincare series.\n\nBest,\n[Your name]", contactEmail: "partnerships@glossier.com" },
+        { id: 2, name: "Allbirds", category: "Fashion", email: "Hi Team,\n\nAs someone passionate about sustainable fashion, I've been a huge fan of Allbirds' mission.\n\nI'd love to feature your new collection in my sustainability-focused content this month.\n\nLooking forward to connecting!\n\n[Your name]", contactEmail: "creators@allbirds.com" },
+        { id: 3, name: "Athletic Greens", category: "Wellness", email: "Hey AG Team,\n\nI've been incorporating AG1 into my morning routine and my community has been asking about it non-stop.\n\nWould love to discuss a collaboration that feels authentic to my wellness content.\n\nCheers,\n[Your name]", contactEmail: "influencers@athleticgreens.com" },
+        { id: 4, name: "Notion", category: "Tech", email: "Hi Notion Team,\n\nAs a creator, Notion has transformed how I organize my content calendar and brand partnerships.\n\nI'd love to create a \"Creator's Workspace\" template and share how I use Notion with my audience.\n\nBest,\n[Your name]", contactEmail: "creators@notion.so" },
+        { id: 5, name: "Oura", category: "Health Tech", email: "Hi there,\n\nI've been tracking my sleep with Oura Ring and the insights have been game-changing for my productivity content.\n\nWould love to share my experience with my health-conscious audience.\n\nWarm regards,\n[Your name]", contactEmail: "partnerships@ouraring.com" },
+        { id: 6, name: "Gymshark", category: "Fitness", email: "Hey Gymshark Team,\n\nI've been wearing Gymshark for my workout content and my followers constantly ask where my gear is from.\n\nWould love to partner on showcasing the new collection!\n\nBest,\n[Your name]", contactEmail: "creators@gymshark.com" },
+        { id: 7, name: "Ritual", category: "Wellness", email: "Hi Ritual Team,\n\nI'm passionate about transparent wellness brands, and Ritual's approach to vitamins really resonates with me.\n\nLet's chat about a potential collaboration!\n\nWarm regards,\n[Your name]", contactEmail: "partnerships@ritual.com" },
+        { id: 8, name: "Away", category: "Travel", email: "Hi Away Team,\n\nAs a creator who travels frequently, I've been eyeing your luggage for my upcoming content series.\n\nWould love to explore a partnership!\n\nBest,\n[Your name]", contactEmail: "influencers@awaytravel.com" },
+        { id: 9, name: "Mejuri", category: "Jewelry", email: "Hi Mejuri Team,\n\nYour everyday luxury pieces are exactly what my audience loves. I'd love to feature them in my styling content.\n\nLooking forward to connecting!\n\n[Your name]", contactEmail: "creators@mejuri.com" },
+        { id: 10, name: "Patagonia", category: "Outdoor", email: "Hi Patagonia Team,\n\nYour commitment to sustainability aligns perfectly with my content values. Would love to discuss a collaboration.\n\nBest,\n[Your name]", contactEmail: "partnerships@patagonia.com" },
+        { id: 11, name: "Headspace", category: "Wellness", email: "Hi Headspace Team,\n\nMental health is central to my content, and I've been using your app daily. Would love to share my journey with my audience.\n\nWarm regards,\n[Your name]", contactEmail: "creators@headspace.com" },
+        { id: 12, name: "Casper", category: "Home", email: "Hi Casper Team,\n\nSleep content performs incredibly well with my audience. I'd love to feature your products in my wellness series.\n\nBest,\n[Your name]", contactEmail: "influencers@casper.com" },
+      ],
+      status: "sent" as const 
+    },
+    { 
+      id: 2, 
+      date: "Dec 1, 2025", 
+      brands: [
+        { id: 1, name: "Warby Parker", category: "Eyewear", email: "Hi Warby Parker Team,\n\nI love your approach to affordable, stylish eyewear. Would be great to collaborate on some content!\n\nLooking forward to it,\n[Your name]", contactEmail: "partnerships@warbyparker.com" },
+        { id: 2, name: "Everlane", category: "Fashion", email: "Hi Everlane Team,\n\nTransparent pricing and sustainable fashion? That's exactly what my audience cares about. Let's work together!\n\nBest,\n[Your name]", contactEmail: "creators@everlane.com" },
+        { id: 3, name: "Calm", category: "Wellness", email: "Hi Calm Team,\n\nI've been using Calm for years and it's genuinely improved my sleep. Would love to share this with my followers.\n\nWarm regards,\n[Your name]", contactEmail: "influencers@calm.com" },
+        { id: 4, name: "Lululemon", category: "Fitness", email: "Hi Lululemon Team,\n\nYour athleisure pieces are staples in my wardrobe. Would love to create content featuring the new collection.\n\nBest,\n[Your name]", contactEmail: "creators@lululemon.com" },
+        { id: 5, name: "Aesop", category: "Beauty", email: "Hi Aesop Team,\n\nYour products have been part of my skincare routine for years. I'd love to showcase them to my beauty-focused audience.\n\nWarm regards,\n[Your name]", contactEmail: "partnerships@aesop.com" },
+        { id: 6, name: "Brooklinen", category: "Home", email: "Hi Brooklinen Team,\n\nQuality bedding makes such a difference! I'd love to feature your products in my home content.\n\nBest,\n[Your name]", contactEmail: "influencers@brooklinen.com" },
+        { id: 7, name: "Outdoor Voices", category: "Fitness", email: "Hi OV Team,\n\n'Doing Things' is my mantra! Would love to partner on some active lifestyle content.\n\nLooking forward to connecting!\n\n[Your name]", contactEmail: "creators@outdoorvoices.com" },
+        { id: 8, name: "Dyson", category: "Tech", email: "Hi Dyson Team,\n\nYour innovative products always generate buzz with my audience. Would love to discuss a collaboration.\n\nBest,\n[Your name]", contactEmail: "partnerships@dyson.com" },
+      ],
+      status: "sent" as const 
+    },
+    { 
+      id: 3, 
+      date: "Nov 28, 2025", 
+      brands: [
+        { id: 1, name: "Recess", category: "Beverage", email: "Hi Recess Team,\n\nI love incorporating your drinks into my wellness content. Would be great to make it official!\n\nCheers,\n[Your name]", contactEmail: "partnerships@recess.com" },
+        { id: 2, name: "Skims", category: "Fashion", email: "Hi Skims Team,\n\nYour inclusive approach to shapewear is something I'd love to highlight to my audience.\n\nBest,\n[Your name]", contactEmail: "creators@skims.com" },
+        { id: 3, name: "Whoop", category: "Health Tech", email: "Hi Whoop Team,\n\nI've been tracking my fitness with Whoop and my followers are curious about it. Let's create some content together!\n\nBest,\n[Your name]", contactEmail: "influencers@whoop.com" },
+        { id: 4, name: "Seed", category: "Wellness", email: "Hi Seed Team,\n\nGut health is a hot topic with my audience. I'd love to share my experience with your probiotics.\n\nWarm regards,\n[Your name]", contactEmail: "partnerships@seed.com" },
+        { id: 5, name: "Therabody", category: "Wellness", email: "Hi Therabody Team,\n\nRecovery content is huge with my fitness audience. Would love to feature the Theragun in my routine videos.\n\nBest,\n[Your name]", contactEmail: "creators@therabody.com" },
+        { id: 6, name: "Glossier", category: "Beauty", email: "Hi Sarah,\n\nLove what Glossier is doing with clean beauty! I've been using your Cloud Paint for years and my audience always asks about it.\n\nWould love to explore a partnership for my upcoming skincare series.\n\nBest,\n[Your name]", contactEmail: "partnerships@glossier.com" },
+        { id: 7, name: "Allbirds", category: "Fashion", email: "Hi Team,\n\nAs someone passionate about sustainable fashion, I've been a huge fan of Allbirds' mission.\n\nI'd love to feature your new collection in my sustainability-focused content this month.\n\nLooking forward to connecting!\n\n[Your name]", contactEmail: "creators@allbirds.com" },
+        { id: 8, name: "Athletic Greens", category: "Wellness", email: "Hey AG Team,\n\nI've been incorporating AG1 into my morning routine and my community has been asking about it non-stop.\n\nWould love to discuss a collaboration that feels authentic to my wellness content.\n\nCheers,\n[Your name]", contactEmail: "influencers@athleticgreens.com" },
+        { id: 9, name: "Notion", category: "Tech", email: "Hi Notion Team,\n\nAs a creator, Notion has transformed how I organize my content calendar and brand partnerships.\n\nI'd love to create a \"Creator's Workspace\" template and share how I use Notion with my audience.\n\nBest,\n[Your name]", contactEmail: "creators@notion.so" },
+        { id: 10, name: "Oura", category: "Health Tech", email: "Hi there,\n\nI've been tracking my sleep with Oura Ring and the insights have been game-changing for my productivity content.\n\nWould love to share my experience with my health-conscious audience.\n\nWarm regards,\n[Your name]", contactEmail: "partnerships@ouraring.com" },
+        { id: 11, name: "Gymshark", category: "Fitness", email: "Hey Gymshark Team,\n\nI've been wearing Gymshark for my workout content and my followers constantly ask where my gear is from.\n\nWould love to partner on showcasing the new collection!\n\nBest,\n[Your name]", contactEmail: "creators@gymshark.com" },
+        { id: 12, name: "Ritual", category: "Wellness", email: "Hi Ritual Team,\n\nI'm passionate about transparent wellness brands, and Ritual's approach to vitamins really resonates with me.\n\nLet's chat about a potential collaboration!\n\nWarm regards,\n[Your name]", contactEmail: "partnerships@ritual.com" },
+        { id: 13, name: "Away", category: "Travel", email: "Hi Away Team,\n\nAs a creator who travels frequently, I've been eyeing your luggage for my upcoming content series.\n\nWould love to explore a partnership!\n\nBest,\n[Your name]", contactEmail: "influencers@awaytravel.com" },
+        { id: 14, name: "Mejuri", category: "Jewelry", email: "Hi Mejuri Team,\n\nYour everyday luxury pieces are exactly what my audience loves. I'd love to feature them in my styling content.\n\nLooking forward to connecting!\n\n[Your name]", contactEmail: "creators@mejuri.com" },
+        { id: 15, name: "Patagonia", category: "Outdoor", email: "Hi Patagonia Team,\n\nYour commitment to sustainability aligns perfectly with my content values. Would love to discuss a collaboration.\n\nBest,\n[Your name]", contactEmail: "partnerships@patagonia.com" },
+      ],
+      status: "sent" as const 
+    },
+    { 
+      id: 4, 
+      date: "Nov 22, 2025", 
+      brands: [
+        { id: 1, name: "Headspace", category: "Wellness", email: "Hi Headspace Team,\n\nMental health is central to my content, and I've been using your app daily. Would love to share my journey with my audience.\n\nWarm regards,\n[Your name]", contactEmail: "creators@headspace.com" },
+        { id: 2, name: "Casper", category: "Home", email: "Hi Casper Team,\n\nSleep content performs incredibly well with my audience. I'd love to feature your products in my wellness series.\n\nBest,\n[Your name]", contactEmail: "influencers@casper.com" },
+        { id: 3, name: "Warby Parker", category: "Eyewear", email: "Hi Warby Parker Team,\n\nI love your approach to affordable, stylish eyewear. Would be great to collaborate on some content!\n\nLooking forward to it,\n[Your name]", contactEmail: "partnerships@warbyparker.com" },
+        { id: 4, name: "Everlane", category: "Fashion", email: "Hi Everlane Team,\n\nTransparent pricing and sustainable fashion? That's exactly what my audience cares about. Let's work together!\n\nBest,\n[Your name]", contactEmail: "creators@everlane.com" },
+        { id: 5, name: "Calm", category: "Wellness", email: "Hi Calm Team,\n\nI've been using Calm for years and it's genuinely improved my sleep. Would love to share this with my followers.\n\nWarm regards,\n[Your name]", contactEmail: "influencers@calm.com" },
+        { id: 6, name: "Lululemon", category: "Fitness", email: "Hi Lululemon Team,\n\nYour athleisure pieces are staples in my wardrobe. Would love to create content featuring the new collection.\n\nBest,\n[Your name]", contactEmail: "creators@lululemon.com" },
+        { id: 7, name: "Aesop", category: "Beauty", email: "Hi Aesop Team,\n\nYour products have been part of my skincare routine for years. I'd love to showcase them to my beauty-focused audience.\n\nWarm regards,\n[Your name]", contactEmail: "partnerships@aesop.com" },
+        { id: 8, name: "Brooklinen", category: "Home", email: "Hi Brooklinen Team,\n\nQuality bedding makes such a difference! I'd love to feature your products in my home content.\n\nBest,\n[Your name]", contactEmail: "influencers@brooklinen.com" },
+        { id: 9, name: "Outdoor Voices", category: "Fitness", email: "Hi OV Team,\n\n'Doing Things' is my mantra! Would love to partner on some active lifestyle content.\n\nLooking forward to connecting!\n\n[Your name]", contactEmail: "creators@outdoorvoices.com" },
+        { id: 10, name: "Dyson", category: "Tech", email: "Hi Dyson Team,\n\nYour innovative products always generate buzz with my audience. Would love to discuss a collaboration.\n\nBest,\n[Your name]", contactEmail: "partnerships@dyson.com" },
+      ],
+      status: "sent" as const 
+    },
   ];
 
-  const campaignBrands = [
-    { id: 1, name: "Glossier", category: "Beauty", email: "Hi Sarah,\n\nLove what Glossier is doing with clean beauty! I've been using your Cloud Paint for years and my audience always asks about it.\n\nWould love to explore a partnership for my upcoming skincare series.\n\nBest,\n[Your name]" },
-    { id: 2, name: "Allbirds", category: "Fashion", email: "Hi Team,\n\nAs someone passionate about sustainable fashion, I've been a huge fan of Allbirds' mission.\n\nI'd love to feature your new collection in my sustainability-focused content this month.\n\nLooking forward to connecting!\n\n[Your name]" },
-    { id: 3, name: "Athletic Greens", category: "Wellness", email: "Hey AG Team,\n\nI've been incorporating AG1 into my morning routine and my community has been asking about it non-stop.\n\nWould love to discuss a collaboration that feels authentic to my wellness content.\n\nCheers,\n[Your name]" },
-    { id: 4, name: "Notion", category: "Tech", email: "Hi Notion Team,\n\nAs a creator, Notion has transformed how I organize my content calendar and brand partnerships.\n\nI'd love to create a \"Creator's Workspace\" template and share how I use Notion with my audience.\n\nBest,\n[Your name]" },
-    { id: 5, name: "Oura", category: "Health Tech", email: "Hi there,\n\nI've been tracking my sleep with Oura Ring and the insights have been game-changing for my productivity content.\n\nWould love to share my experience with my health-conscious audience.\n\nWarm regards,\n[Your name]" },
-    { id: 6, name: "Gymshark", category: "Fitness", email: "Hey Gymshark Team,\n\nI've been wearing Gymshark for my workout content and my followers constantly ask where my gear is from.\n\nWould love to partner on showcasing the new collection!\n\nBest,\n[Your name]" },
-    { id: 7, name: "Ritual", category: "Wellness", email: "Hi Ritual Team,\n\nI'm passionate about transparent wellness brands, and Ritual's approach to vitamins really resonates with me.\n\nLet's chat about a potential collaboration!\n\nWarm regards,\n[Your name]" },
-    { id: 8, name: "Away", category: "Travel", email: "Hi Away Team,\n\nAs a creator who travels frequently, I've been eyeing your luggage for my upcoming content series.\n\nWould love to explore a partnership!\n\nBest,\n[Your name]" },
-    { id: 9, name: "Mejuri", category: "Jewelry", email: "Hi Mejuri Team,\n\nYour everyday luxury pieces are exactly what my audience loves. I'd love to feature them in my styling content.\n\nLooking forward to connecting!\n\n[Your name]" },
-    { id: 10, name: "Patagonia", category: "Outdoor", email: "Hi Patagonia Team,\n\nYour commitment to sustainability aligns perfectly with my content values. Would love to discuss a collaboration.\n\nBest,\n[Your name]" },
-    { id: 11, name: "Headspace", category: "Wellness", email: "Hi Headspace Team,\n\nMental health is central to my content, and I've been using your app daily. Would love to share my journey with my audience.\n\nWarm regards,\n[Your name]" },
-    { id: 12, name: "Casper", category: "Home", email: "Hi Casper Team,\n\nSleep content performs incredibly well with my audience. I'd love to feature your products in my wellness series.\n\nBest,\n[Your name]" },
-    { id: 13, name: "Warby Parker", category: "Eyewear", email: "Hi Warby Parker Team,\n\nI love your approach to affordable, stylish eyewear. Would be great to collaborate on some content!\n\nLooking forward to it,\n[Your name]" },
-    { id: 14, name: "Everlane", category: "Fashion", email: "Hi Everlane Team,\n\nTransparent pricing and sustainable fashion? That's exactly what my audience cares about. Let's work together!\n\nBest,\n[Your name]" },
-    { id: 15, name: "Calm", category: "Wellness", email: "Hi Calm Team,\n\nI've been using Calm for years and it's genuinely improved my sleep. Would love to share this with my followers.\n\nWarm regards,\n[Your name]" },
-    { id: 16, name: "Lululemon", category: "Fitness", email: "Hi Lululemon Team,\n\nYour athleisure pieces are staples in my wardrobe. Would love to create content featuring the new collection.\n\nBest,\n[Your name]" },
-    { id: 17, name: "Aesop", category: "Beauty", email: "Hi Aesop Team,\n\nYour products have been part of my skincare routine for years. I'd love to showcase them to my beauty-focused audience.\n\nWarm regards,\n[Your name]" },
-    { id: 18, name: "Brooklinen", category: "Home", email: "Hi Brooklinen Team,\n\nQuality bedding makes such a difference! I'd love to feature your products in my home content.\n\nBest,\n[Your name]" },
-    { id: 19, name: "Outdoor Voices", category: "Fitness", email: "Hi OV Team,\n\n'Doing Things' is my mantra! Would love to partner on some active lifestyle content.\n\nLooking forward to connecting!\n\n[Your name]" },
-    { id: 20, name: "Dyson", category: "Tech", email: "Hi Dyson Team,\n\nYour innovative products always generate buzz with my audience. Would love to discuss a collaboration.\n\nBest,\n[Your name]" },
-    { id: 21, name: "Recess", category: "Beverage", email: "Hi Recess Team,\n\nI love incorporating your drinks into my wellness content. Would be great to make it official!\n\nCheers,\n[Your name]" },
-    { id: 22, name: "Skims", category: "Fashion", email: "Hi Skims Team,\n\nYour inclusive approach to shapewear is something I'd love to highlight to my audience.\n\nBest,\n[Your name]" },
-    { id: 23, name: "Whoop", category: "Health Tech", email: "Hi Whoop Team,\n\nI've been tracking my fitness with Whoop and my followers are curious about it. Let's create some content together!\n\nBest,\n[Your name]" },
-    { id: 24, name: "Seed", category: "Wellness", email: "Hi Seed Team,\n\nGut health is a hot topic with my audience. I'd love to share my experience with your probiotics.\n\nWarm regards,\n[Your name]" },
-    { id: 25, name: "Therabody", category: "Wellness", email: "Hi Therabody Team,\n\nRecovery content is huge with my fitness audience. Would love to feature the Theragun in my routine videos.\n\nBest,\n[Your name]" },
+  const handleViewHistory = (historyId: number) => {
+    setSelectedHistoryId(historyId);
+    setOutreachState("history-detail");
+  };
+
+  const selectedHistory = brandMatchHistory.find(h => h.id === selectedHistoryId);
+
+  // Sample brand pool for generation
+  const brandPool = [
+    { name: "Glossier", category: "Beauty", email: "Hi Sarah,\n\nLove what Glossier is doing with clean beauty! I've been using your Cloud Paint for years and my audience always asks about it.\n\nWould love to explore a partnership for my upcoming skincare series.\n\nBest,\n[Your name]", contactEmail: "partnerships@glossier.com" },
+    { name: "Allbirds", category: "Fashion", email: "Hi Team,\n\nAs someone passionate about sustainable fashion, I've been a huge fan of Allbirds' mission.\n\nI'd love to feature your new collection in my sustainability-focused content this month.\n\nLooking forward to connecting!\n\n[Your name]", contactEmail: "creators@allbirds.com" },
+    { name: "Athletic Greens", category: "Wellness", email: "Hey AG Team,\n\nI've been incorporating AG1 into my morning routine and my community has been asking about it non-stop.\n\nWould love to discuss a collaboration that feels authentic to my wellness content.\n\nCheers,\n[Your name]", contactEmail: "influencers@athleticgreens.com" },
+    { name: "Notion", category: "Tech", email: "Hi Notion Team,\n\nAs a creator, Notion has transformed how I organize my content calendar and brand partnerships.\n\nI'd love to create a \"Creator's Workspace\" template and share how I use Notion with my audience.\n\nBest,\n[Your name]", contactEmail: "creators@notion.so" },
+    { name: "Oura", category: "Health Tech", email: "Hi there,\n\nI've been tracking my sleep with Oura Ring and the insights have been game-changing for my productivity content.\n\nWould love to share my experience with my health-conscious audience.\n\nWarm regards,\n[Your name]", contactEmail: "partnerships@ouraring.com" },
+    { name: "Gymshark", category: "Fitness", email: "Hey Gymshark Team,\n\nI've been wearing Gymshark for my workout content and my followers constantly ask where my gear is from.\n\nWould love to partner on showcasing the new collection!\n\nBest,\n[Your name]", contactEmail: "creators@gymshark.com" },
+    { name: "Ritual", category: "Wellness", email: "Hi Ritual Team,\n\nI'm passionate about transparent wellness brands, and Ritual's approach to vitamins really resonates with me.\n\nLet's chat about a potential collaboration!\n\nWarm regards,\n[Your name]", contactEmail: "partnerships@ritual.com" },
+    { name: "Away", category: "Travel", email: "Hi Away Team,\n\nAs a creator who travels frequently, I've been eyeing your luggage for my upcoming content series.\n\nWould love to explore a partnership!\n\nBest,\n[Your name]", contactEmail: "influencers@awaytravel.com" },
+    { name: "Mejuri", category: "Jewelry", email: "Hi Mejuri Team,\n\nYour everyday luxury pieces are exactly what my audience loves. I'd love to feature them in my styling content.\n\nLooking forward to connecting!\n\n[Your name]", contactEmail: "creators@mejuri.com" },
+    { name: "Patagonia", category: "Outdoor", email: "Hi Patagonia Team,\n\nYour commitment to sustainability aligns perfectly with my content values. Would love to discuss a collaboration.\n\nBest,\n[Your name]", contactEmail: "partnerships@patagonia.com" },
+    { name: "Headspace", category: "Wellness", email: "Hi Headspace Team,\n\nMental health is central to my content, and I've been using your app daily. Would love to share my journey with my audience.\n\nWarm regards,\n[Your name]", contactEmail: "creators@headspace.com" },
+    { name: "Casper", category: "Home", email: "Hi Casper Team,\n\nSleep content performs incredibly well with my audience. I'd love to feature your products in my wellness series.\n\nBest,\n[Your name]", contactEmail: "influencers@casper.com" },
+    { name: "Warby Parker", category: "Eyewear", email: "Hi Warby Parker Team,\n\nI love your approach to affordable, stylish eyewear. Would be great to collaborate on some content!\n\nLooking forward to it,\n[Your name]", contactEmail: "partnerships@warbyparker.com" },
+    { name: "Everlane", category: "Fashion", email: "Hi Everlane Team,\n\nTransparent pricing and sustainable fashion? That's exactly what my audience cares about. Let's work together!\n\nBest,\n[Your name]", contactEmail: "creators@everlane.com" },
+    { name: "Calm", category: "Wellness", email: "Hi Calm Team,\n\nI've been using Calm for years and it's genuinely improved my sleep. Would love to share this with my followers.\n\nWarm regards,\n[Your name]", contactEmail: "influencers@calm.com" },
+    { name: "Lululemon", category: "Fitness", email: "Hi Lululemon Team,\n\nYour athleisure pieces are staples in my wardrobe. Would love to create content featuring the new collection.\n\nBest,\n[Your name]", contactEmail: "creators@lululemon.com" },
+    { name: "Aesop", category: "Beauty", email: "Hi Aesop Team,\n\nYour products have been part of my skincare routine for years. I'd love to showcase them to my beauty-focused audience.\n\nWarm regards,\n[Your name]", contactEmail: "partnerships@aesop.com" },
+    { name: "Brooklinen", category: "Home", email: "Hi Brooklinen Team,\n\nQuality bedding makes such a difference! I'd love to feature your products in my home content.\n\nBest,\n[Your name]", contactEmail: "influencers@brooklinen.com" },
+    { name: "Outdoor Voices", category: "Fitness", email: "Hi OV Team,\n\n'Doing Things' is my mantra! Would love to partner on some active lifestyle content.\n\nLooking forward to connecting!\n\n[Your name]", contactEmail: "creators@outdoorvoices.com" },
+    { name: "Dyson", category: "Tech", email: "Hi Dyson Team,\n\nYour innovative products always generate buzz with my audience. Would love to discuss a collaboration.\n\nBest,\n[Your name]", contactEmail: "partnerships@dyson.com" },
   ];
 
+  const handleStartOutreach = () => {
+    setOutreachState("loading");
+    
+    // Simulate loading for 2 seconds
+    setTimeout(() => {
+      // Randomly select brands
+      const shuffled = [...brandPool].sort(() => 0.5 - Math.random());
+      const selected = shuffled.slice(0, brandCount).map((brand, index) => ({
+        ...brand,
+        id: index + 1,
+      }));
+      setGeneratedBrands(selected);
+      setOutreachState("results");
+    }, 2000);
+  };
+
+  const handleBackToIdle = () => {
+    setOutreachState("idle");
+    setGeneratedBrands([]);
+    setBrandCount(10);
+  };
+
+  // History Detail Screen
+  if (outreachState === "history-detail" && selectedHistory) {
   return (
-    <div className="h-full overflow-y-auto px-6 py-4">
-      {/* Ready for Review Card */}
-      <motion.button
-        onClick={() => setShowReviewModal(true)}
-        className="w-full bg-gradient-to-br from-terracotta to-terracotta/90 rounded-3xl p-5 mb-4 text-left relative overflow-hidden"
-        whileHover={{ scale: 1.01 }}
-        whileTap={{ scale: 0.99 }}
-      >
-        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-20 h-20 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
-        
-        <div className="relative z-10">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
-            <span className="text-white/80 text-sm font-medium">Ready for review</span>
-          </div>
-          <h2 className="text-white text-lg font-semibold mb-1" style={{ fontFamily: "var(--font-display)" }}>
-            Your outreach is ready to go
-          </h2>
-          <p className="text-white/70 text-sm mb-3">
-            {campaignBrands.length} brands matched to your niche
-          </p>
-          <div className="flex items-center gap-2 text-white text-sm font-medium">
-            <span>Review &amp; approve</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M5 12h14M12 5l7 7-7 7" />
+      <div className="h-full flex flex-col">
+        {/* Header */}
+        <div className="px-6 pt-4 pb-3 flex items-center justify-between border-b border-border">
+          <button
+            onClick={() => {
+              setOutreachState("idle");
+              setSelectedHistoryId(null);
+            }}
+            className="flex items-center gap-2 text-ink-light hover:text-ink transition-colors"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
+            <span className="text-sm font-medium">Back</span>
+          </button>
+          <div className="text-right">
+            <div className="text-sm font-medium text-ink">{selectedHistory.date}</div>
+            <div className="text-xs text-ink-light">{selectedHistory.brands.length} brands</div>
           </div>
         </div>
-      </motion.button>
 
-      {/* Review Modal */}
-      <AnimatePresence>
-        {showReviewModal && (
-          <>
-            {/* Backdrop */}
+        {/* Brand List */}
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          <div className="space-y-3">
+            {selectedHistory.brands.map((brand) => (
+              <BrandEmailCard key={brand.id} brand={brand} showContactEmail />
+            ))}
+          </div>
+          </div>
+        </div>
+    );
+  }
+
+  // Loading Screen
+  if (outreachState === "loading") {
+    return (
+      <div className="h-full flex flex-col items-center justify-center px-6 py-4">
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-ink/50 z-50"
-              onClick={() => setShowReviewModal(false)}
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center"
+        >
+          {/* Animated loader */}
+          <div className="relative w-20 h-20 mx-auto mb-6">
+            <motion.div
+              className="absolute inset-0 rounded-full border-4 border-terracotta/20"
             />
-            
-            {/* Modal */}
             <motion.div
-              initial={{ opacity: 0, y: "100%" }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="fixed inset-x-0 bottom-0 z-50 bg-cream rounded-t-3xl h-[75vh] overflow-hidden flex flex-col"
-            >
-              {/* Modal Header */}
-              <div className="px-6 pt-6 pb-4 border-b border-border bg-cream sticky top-0">
-                <div className="flex items-center justify-between mb-1">
-                  <h2 className="text-xl font-semibold text-ink" style={{ fontFamily: "var(--font-display)" }}>
-                    Campaign Review
+              className="absolute inset-0 rounded-full border-4 border-transparent border-t-terracotta"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-terracotta">
+                <path d="M22 2L11 13" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M22 2L15 22L11 13L2 9L22 2Z" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+          </div>
+          
+          <h2 className="text-xl font-semibold text-ink mb-2" style={{ fontFamily: "var(--font-display)" }}>
+            Finding your matches
                   </h2>
+          <p className="text-sm text-ink-light">
+            Matching you with {brandCount} brands in your niche...
+          </p>
+          
+          {/* Progress dots */}
+          <div className="flex items-center justify-center gap-1.5 mt-6">
+            {[0, 1, 2].map((i) => (
+              <motion.div
+                key={i}
+                className="w-2 h-2 rounded-full bg-terracotta"
+                animate={{ opacity: [0.3, 1, 0.3] }}
+                transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
+              />
+            ))}
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // Results Screen
+  if (outreachState === "results") {
+    return (
+      <div className="h-full flex flex-col">
+        {/* Header */}
+        <div className="px-6 pt-4 pb-3 flex items-center justify-between">
                   <button
-                    onClick={() => setShowReviewModal(false)}
-                    className="w-8 h-8 rounded-full bg-white border border-border flex items-center justify-center text-ink-light hover:text-ink transition-colors"
+            onClick={handleBackToIdle}
+            className="flex items-center gap-2 text-ink-light hover:text-ink transition-colors"
                   >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M18 6L6 18M6 6l12 12" />
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M19 12H5M12 19l-7-7 7-7" />
                     </svg>
+            <span className="text-sm font-medium">Back</span>
                   </button>
+          <div className="text-sm text-ink-light">
+            {generatedBrands.length} brands matched
                 </div>
-                <p className="text-sm text-ink-light">Review the brands and emails before sending</p>
+        </div>
+
+        {/* Success Banner */}
+        <div className="px-6 mb-4">
+          <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-4 text-white">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="font-semibold">Outreach ready!</h3>
+                <p className="text-sm text-white/80">Review your {generatedBrands.length} personalized emails below</p>
+              </div>
+            </div>
+          </div>
               </div>
               
               {/* Brand List */}
-              <div className="flex-1 overflow-y-auto px-6 py-4">
+        <div className="flex-1 overflow-y-auto px-6 pb-4">
                 <div className="space-y-3">
-                  {campaignBrands.map((brand) => (
-                    <BrandEmailCard key={brand.id} brand={brand} />
+            {generatedBrands.map((brand) => (
+              <BrandEmailCard key={brand.id} brand={brand} showContactEmail />
                   ))}
                 </div>
               </div>
               
-              {/* Modal Footer */}
+        {/* Footer CTA */}
               <div className="px-6 py-4 border-t border-border bg-cream">
                 <button
-                  onClick={() => setShowReviewModal(false)}
+            onClick={handleBackToIdle}
                   className="w-full py-3.5 rounded-2xl bg-terracotta text-white font-medium hover:bg-terracotta/90 transition-colors"
                 >
-                  Approve &amp; Send
+            Send All Emails
                 </button>
               </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+      </div>
+    );
+  }
 
-      {/* Next Campaign Countdown */}
-      <div className="bg-white rounded-3xl border border-border p-5 mb-4 flex items-center justify-between">
-        <div>
-          <div className="text-ink-lighter text-sm mb-0.5">Next campaign</div>
-          <div className="text-ink font-semibold" style={{ fontFamily: "var(--font-display)" }}>
-            Starts in 3 days
+  // Selecting Screen (Brand count selector)
+  if (outreachState === "selecting") {
+    return (
+      <div className="h-full overflow-y-auto px-6 py-4">
+        {/* Back button */}
+        <button
+          onClick={() => setOutreachState("idle")}
+          className="flex items-center gap-2 text-ink-light hover:text-ink transition-colors mb-6"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+          </svg>
+          <span className="text-sm font-medium">Back</span>
+        </button>
+
+        {/* Selection Card */}
+        <div className="bg-white rounded-3xl border border-border p-6 mb-6">
+          <h2 className="text-xl font-semibold text-ink mb-1" style={{ fontFamily: "var(--font-display)" }}>
+            How many brands?
+          </h2>
+          <p className="text-sm text-ink-light mb-6">
+            Select between 1-20 brands to match with
+          </p>
+
+          {/* Brand Count Selector */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-3xl font-bold text-terracotta">{brandCount}</span>
+              <span className="text-sm text-ink-light">brands</span>
           </div>
+            
+            {/* Slider */}
+            <input
+              type="range"
+              min="1"
+              max="20"
+              value={brandCount}
+              onChange={(e) => setBrandCount(parseInt(e.target.value))}
+              className="w-full h-2 bg-border rounded-full appearance-none cursor-pointer accent-terracotta"
+              style={{
+                background: `linear-gradient(to right, #E25D33 0%, #E25D33 ${(brandCount - 1) / 19 * 100}%, #E8E4DE ${(brandCount - 1) / 19 * 100}%, #E8E4DE 100%)`
+              }}
+            />
+            
+            <div className="flex justify-between text-xs text-ink-lighter mt-2">
+              <span>1</span>
+              <span>20</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          {[
-            { num: "3", label: "d" },
-            { num: "12", label: "h" },
-            { num: "45", label: "m" },
-          ].map((item, i) => (
-            <div key={i} className="bg-cream rounded-xl px-3 py-2 text-center min-w-[48px]">
-              <span className="text-ink font-semibold">{item.num}</span>
-              <span className="text-ink-lighter text-xs ml-0.5">{item.label}</span>
             </div>
-          ))}
-        </div>
+
+          {/* Quick Select */}
+          <div className="flex gap-2 mb-6">
+            {[5, 10, 15, 20].map((num) => (
+              <button
+                key={num}
+                onClick={() => setBrandCount(num)}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                  brandCount === num
+                    ? "bg-terracotta text-white"
+                    : "bg-cream text-ink hover:bg-cream-dark"
+                }`}
+              >
+                {num}
+              </button>
+            ))}
       </div>
 
-      {/* This Week's Campaign Card */}
-      <div className="bg-white rounded-3xl border border-border p-5 mb-4">
+          {/* Usage Info */}
+          <div className="bg-cream rounded-2xl p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-ink">Monthly usage</span>
+              <span className="text-sm font-medium text-ink">{usageUsed + brandCount} / {usageRemaining}</span>
+          </div>
+            <div className="h-2 bg-border rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-terracotta rounded-full transition-all"
+                style={{ width: `${((usageUsed + brandCount) / usageRemaining) * 100}%` }}
+              />
+            </div>
+            <p className="text-xs text-ink-lighter mt-2">
+              {usageRemaining - usageUsed - brandCount} brands remaining this month
+            </p>
+          </div>
+        </div>
+
+        {/* Start Button */}
+        <button
+          onClick={handleStartOutreach}
+          className="w-full py-4 rounded-2xl bg-terracotta text-white font-medium hover:bg-terracotta/90 transition-colors flex items-center justify-center gap-2"
+        >
+          <span>Start Outreach</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 2L11 13" />
+            <path d="M22 2L15 22L11 13L2 9L22 2Z" />
+          </svg>
+        </button>
+        </div>
+    );
+  }
+
+  // Idle Screen (Main outreach page)
+  return (
+    <div className="h-full overflow-y-auto px-6 py-4">
+      {/* Usage Card with Start Outreach Button */}
+      <div className="bg-white rounded-3xl border border-border p-5 mb-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <div className="text-xs text-ink-lighter mb-1">This Week</div>
-            <h2 className="text-lg font-semibold text-ink" style={{ fontFamily: "var(--font-display)" }}>
-              Campaign Live
-            </h2>
+            <div className="text-sm text-ink-lighter">Monthly brand usage</div>
+            <div className="text-lg font-semibold text-ink">{usageUsed} / {usageRemaining} <span className="text-sm font-normal text-ink-light">brands</span></div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-sm text-ink-light">15/25 sent</span>
+          <div className="text-right">
+            <div className="text-sm text-ink-lighter">Remaining</div>
+            <div className="text-lg font-semibold text-terracotta">{usageRemaining - usageUsed} <span className="text-sm font-normal">brands</span></div>
           </div>
         </div>
-
-        {/* Progress */}
-        <div className="h-1.5 bg-border rounded-full overflow-hidden mb-4">
-          <div className="h-full bg-terracotta rounded-full w-[60%]" />
+        <div className="h-2 bg-border rounded-full overflow-hidden mb-5">
+          <div 
+            className="h-full bg-terracotta rounded-full"
+            style={{ width: `${(usageUsed / usageRemaining) * 100}%` }}
+          />
         </div>
-
-        {/* Minimal stats */}
-        <div className="flex items-center gap-4 text-sm">
-          <span className="text-ink"><span className="font-semibold">2</span> responses</span>
-          <span className="text-ink-lighter">·</span>
-          <span className="text-terracotta font-medium">40% rate</span>
-        </div>
+        
+        {/* Start Outreach Button */}
+        <motion.button
+          onClick={() => setOutreachState("selecting")}
+          className="w-full bg-terracotta rounded-2xl py-4 text-white font-semibold text-base text-center flex items-center justify-center gap-2 shadow-lg shadow-terracotta/25"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          Start Outreach
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 2L11 13" />
+            <path d="M22 2L15 22L11 13L2 9L22 2Z" />
+          </svg>
+        </motion.button>
       </div>
 
-      {/* Past Campaigns Card */}
+      {/* Brand Matches History */}
       <div className="bg-white rounded-3xl border border-border overflow-hidden">
         <div className="p-5 pb-4">
           <h2 className="text-xl font-semibold text-ink" style={{ fontFamily: "var(--font-display)" }}>
-            Past campaigns
+            Brand Matches
           </h2>
+          <p className="text-sm text-ink-light mt-0.5">Your outreach history</p>
         </div>
         
-        <div className="px-5">
-          {pastCampaigns.map((campaign, index) => (
-            <div key={campaign.id}>
-              <div className="flex items-center justify-between py-4">
-                <span className="text-sm font-medium text-ink">{campaign.week}</span>
-                <div className="flex items-center gap-3 text-sm">
-                  <span className="text-ink-light">{campaign.responses} responses</span>
-                  <span className="text-terracotta font-semibold">{campaign.deals} deals</span>
-                </div>
+        <div className="px-5 pb-2">
+          {brandMatchHistory.length === 0 ? (
+            <div className="py-8 text-center">
+              <div className="w-12 h-12 rounded-full bg-cream mx-auto mb-3 flex items-center justify-center">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-ink-lighter" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 2L11 13" />
+                  <path d="M22 2L15 22L11 13L2 9L22 2Z" />
+                </svg>
               </div>
-              
-              {index < pastCampaigns.length - 1 && (
-                <div className="h-px bg-border" />
-              )}
+              <p className="text-sm text-ink-light">No outreach yet</p>
+              <p className="text-xs text-ink-lighter mt-1">Start your first outreach above</p>
             </div>
-          ))}
+          ) : (
+            brandMatchHistory.map((match, index) => (
+              <div key={match.id}>
+                <button
+                  onClick={() => handleViewHistory(match.id)}
+                  className="w-full flex items-center justify-between py-4 text-left hover:bg-cream/50 -mx-2 px-2 rounded-xl transition-colors"
+                >
+                  <div>
+                    <span className="text-sm font-medium text-ink">{match.date}</span>
+                    <div className="text-xs text-ink-light mt-0.5">{match.brands.length} brands</div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-terracotta font-medium">View</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-terracotta">
+                      <path d="M9 18l6-6-6-6" />
+                    </svg>
+                  </div>
+                </button>
+                
+                {index < brandMatchHistory.length - 1 && (
+                  <div className="h-px bg-border" />
+                )}
+              </div>
+            ))
+          )}
         </div>
-        
-        <div className="h-4" />
       </div>
     </div>
   );
 }
 
 // Brand Email Card Component
-function BrandEmailCard({ brand }: { brand: { id: number; name: string; category: string; email: string } }) {
+function BrandEmailCard({ brand, showContactEmail = false }: { brand: { id: number; name: string; category: string; email: string; contactEmail?: string }; showContactEmail?: boolean }) {
   const [isExpanded, setIsExpanded] = useState(false);
   
   return (
@@ -745,7 +1006,11 @@ function BrandEmailCard({ brand }: { brand: { id: number; name: string; category
         {/* Brand Info */}
         <div className="flex-1 min-w-0">
           <div className="font-semibold text-ink">{brand.name}</div>
+          {showContactEmail && brand.contactEmail ? (
+            <div className="text-xs text-ink-light truncate">{brand.contactEmail}</div>
+          ) : (
           <div className="text-sm text-ink-light">{brand.category}</div>
+          )}
         </div>
         
         {/* Expand Icon */}
@@ -771,11 +1036,21 @@ function BrandEmailCard({ brand }: { brand: { id: number; name: string; category
             className="overflow-hidden"
           >
             <div className="px-4 pb-4">
+              {showContactEmail && brand.contactEmail && (
+                <div className="flex items-center gap-2 mb-3 text-ink-light">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                    <polyline points="22,6 12,13 2,6" />
+                  </svg>
+                  <span className="text-xs">{brand.contactEmail}</span>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-cream text-ink-lighter">{brand.category}</span>
+                </div>
+              )}
               <div className="bg-cream rounded-xl p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-ink-light">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                    <polyline points="22,6 12,13 2,6" />
+                    <path d="M12 20h9" />
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
                   </svg>
                   <span className="text-xs font-medium text-ink-light">Draft email</span>
                 </div>
@@ -1109,287 +1384,348 @@ function ChatTab({
 
 // Inbox Tab
 function InboxTab() {
-  const [activeTab, setActiveTab] = useState<"labels" | "drafts">("labels");
-  const [negotiationTone, setNegotiationTone] = useState<"Soft" | "Standard" | "Firm">("Firm");
-  const [showInboxMenu, setShowInboxMenu] = useState(false);
-  
-  const labelCategories = [
-    { name: "New Brand Deal", color: "bg-[#D4E9D7] text-[#3D6B47]" },
-    { name: "Existing Deal", color: "bg-[#D6E4E8] text-[#3D6B73]" },
-    { name: "Gifting", color: "bg-[#F5E6D3] text-[#8B6914]" },
-    { name: "Event", color: "bg-[#FADCD9] text-[#9E4A42]" },
-    { name: "PR Request", color: "bg-[#E8E4DE] text-[#6B6660]" },
-    { name: "Fan Mail", color: "bg-[#E5D4E7] text-[#7B5A7E]" },
-    { name: "Scam", color: "bg-[#F2D4D0] text-[#A84B3F]" },
-    { name: "Other", color: "bg-[#E0DCD6] text-[#6E6962]" },
-  ];
+  const [autoLabelEnabled, setAutoLabelEnabled] = useState(false);
+  const [aiDraftEnabled, setAiDraftEnabled] = useState(false);
+  const [emailLabelsExpanded, setEmailLabelsExpanded] = useState(false);
 
-  const labelsApplied = [
-    { name: "Other", color: "bg-[#A39E97]", count: 79 },
-    { name: "google_workspace", color: "bg-[#8B8680]", count: 15 },
-    { name: "New Brand Deal", color: "bg-[#6B9E74]", count: 4 },
-    { name: "Event", color: "bg-[#C4837B]", count: 2 },
-    { name: "Gifting", color: "bg-[#C9A962]", count: 2 },
-  ];
-
-  const totalEmails = labelsApplied.reduce((sum, l) => sum + l.count, 0);
+  // Toggle Switch Component
+  const Toggle = ({ enabled, onToggle }: { enabled: boolean; onToggle: () => void }) => (
+    <button
+      onClick={onToggle}
+      className={`relative w-12 h-7 rounded-full transition-colors ${
+        enabled ? "bg-terracotta" : "bg-[#E8E4DE]"
+      }`}
+    >
+      <motion.div
+        className="absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow-sm"
+        animate={{ x: enabled ? 20 : 0 }}
+        transition={{ type: "spring", stiffness: 500, damping: 30 }}
+      />
+    </button>
+  );
 
   return (
     <div className="h-full overflow-y-auto px-6 py-4">
-      {/* Tab Pills */}
-      <div className="flex gap-2 mb-5">
-        <button 
-          onClick={() => setActiveTab("labels")}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium transition-all ${
-            activeTab === "labels" 
-              ? "bg-ink text-cream" 
-              : "bg-white border border-border text-ink hover:border-ink/30"
-          }`}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
-            <line x1="7" y1="7" x2="7.01" y2="7" />
-          </svg>
-          Email Labels
-        </button>
-        <button 
-          onClick={() => setActiveTab("drafts")}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium transition-all ${
-            activeTab === "drafts" 
-              ? "bg-ink text-cream" 
-              : "bg-white border border-border text-ink hover:border-ink/30"
-          }`}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M12 20h9" />
-            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-          </svg>
-          Draft Replies
-        </button>
-      </div>
-
-      {activeTab === "labels" ? (
-        <>
-          {/* Connected Account Card */}
-          <div className="bg-white rounded-3xl border border-border mb-5">
-            <div className="flex items-center gap-4 p-5">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-green-400 to-green-500 flex items-center justify-center text-white font-semibold">
-                N
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="font-semibold text-ink">niall.wade@getretrograde.ai</div>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <div className="w-2 h-2 rounded-full bg-green-500" />
-                  <span className="text-sm text-green-600">Connected</span>
-                </div>
-              </div>
-              <div className="relative">
-                <button 
-                  onClick={() => setShowInboxMenu(!showInboxMenu)}
-                  className="p-2 -mr-2 text-ink-light hover:text-ink transition-colors"
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                    <circle cx="12" cy="5" r="2" />
-                    <circle cx="12" cy="12" r="2" />
-                    <circle cx="12" cy="19" r="2" />
-                  </svg>
-                </button>
-                
-                <AnimatePresence>
-                  {showInboxMenu && (
-                    <>
-                      <div 
-                        className="fixed inset-0 z-40" 
-                        onClick={() => setShowInboxMenu(false)}
-                      />
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: -4 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: -4 }}
-                        transition={{ duration: 0.15 }}
-                        className="absolute right-0 top-10 z-50 w-40 bg-white rounded-xl border border-border shadow-lg overflow-hidden"
-                      >
-                        <button
-                          onClick={() => setShowInboxMenu(false)}
-                          className="w-full flex items-center gap-3 px-4 py-3 text-sm text-ink hover:bg-cream transition-colors"
-                        >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M18.36 6.64A9 9 0 1 1 5.64 6.64 9 9 0 0 1 18.36 6.64Z" />
-                            <line x1="12" y1="8" x2="12" y2="12" />
-                            <line x1="12" y1="16" x2="12.01" y2="16" />
-                          </svg>
-                          Turn off
-                        </button>
-                        <div className="h-px bg-border" />
-                        <button
-                          onClick={() => setShowInboxMenu(false)}
-                          className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                        >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="3 6 5 6 21 6" />
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                          </svg>
-                          Delete inbox
-                        </button>
-                      </motion.div>
-                    </>
-                  )}
-                </AnimatePresence>
-              </div>
-            </div>
-          </div>
-
-          {/* Label Categories */}
-          <div className="mb-5">
-            <h3 className="text-sm font-medium text-ink mb-3">Label categories</h3>
-            <div className="flex flex-wrap gap-2">
-              {labelCategories.map((label) => (
-                <span
-                  key={label.name}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium ${label.color}`}
-                >
-                  {label.name}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* Labels Applied Card */}
-          <div className="bg-white rounded-3xl border border-border overflow-hidden">
-            <div className="p-5 pb-4">
-              <span className="text-xl font-semibold text-ink" style={{ fontFamily: "var(--font-display)" }}>Labels applied</span>
-              <p className="text-sm text-ink-light mt-1">{totalEmails} emails categorized</p>
+      {/* Main Inbox Card */}
+      <div className="bg-white rounded-3xl border border-border overflow-hidden mb-4">
+        <div className="p-6">
+          {/* Title & Description */}
+          <h2 className="text-2xl font-semibold text-ink mb-2" style={{ fontFamily: "var(--font-display)" }}>
+            Inbox
+          </h2>
+          <p className="text-ink-light text-sm leading-relaxed">
+            Auto-label brand emails and get AI-drafted replies for incoming deals.
+          </p>
+          
+          {/* Divider */}
+          <div className="h-px bg-border my-5" />
+          
+          {/* Toggle Options */}
+          <div className="space-y-1">
+            {/* Auto-label Toggle */}
+            <div className="flex items-center justify-between py-3">
+              <span className="text-ink font-medium">Auto-label</span>
+              <Toggle enabled={autoLabelEnabled} onToggle={() => setAutoLabelEnabled(!autoLabelEnabled)} />
             </div>
             
-            <div className="px-5 pb-5">
-              {labelsApplied.map((label, index) => (
-                <div key={label.name}>
-                  <div className="flex items-center gap-3 py-3">
-                    <div className={`w-3 h-3 rounded-full ${label.color}`} />
-                    <span className="text-sm text-ink flex-1">{label.name}</span>
-                    <div className="w-20 h-2 bg-border rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full ${label.color}`}
-                        style={{ width: `${(label.count / totalEmails) * 100}%` }}
-                      />
-                    </div>
-                    <span className="text-sm font-medium text-ink w-8 text-right">{label.count}</span>
-                  </div>
-                  {index < labelsApplied.length - 1 && (
-                    <div className="h-px bg-border" />
-                  )}
+            {/* Divider */}
+            <div className="h-px bg-border" />
+            
+            {/* AI Draft Replies Toggle */}
+            <div className="flex items-center justify-between py-3">
+              <span className="text-ink font-medium">AI Draft Replies</span>
+              <Toggle enabled={aiDraftEnabled} onToggle={() => setAiDraftEnabled(!aiDraftEnabled)} />
+            </div>
+          </div>
+          
+          {/* Connected Email */}
+          <div className="flex items-center gap-3 mt-4 pt-3">
+            {/* Checkmark */}
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-blue-500 flex-shrink-0">
+              <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            
+            {/* Google Icon */}
+            <svg width="18" height="18" viewBox="0 0 24 24" className="flex-shrink-0">
+              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+            </svg>
+            
+            {/* Email */}
+            <span className="text-ink text-sm flex-1">niall.wade@getretrograde.ai</span>
+            
+            {/* Info Icon */}
+            <button className="w-6 h-6 rounded-full border border-blue-400 flex items-center justify-center text-blue-500 flex-shrink-0">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="16" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12.01" y2="8" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      {/* Email Labels Expandable Section */}
+      <div className="bg-white rounded-3xl border border-border overflow-hidden">
+        <button
+          onClick={() => setEmailLabelsExpanded(!emailLabelsExpanded)}
+          className="w-full flex items-center justify-between p-5"
+        >
+          <span className="text-ink font-medium">Email Labels</span>
+          <motion.div
+            animate={{ rotate: emailLabelsExpanded ? 180 : 0 }}
+            transition={{ duration: 0.2 }}
+            className="text-ink-lighter"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </motion.div>
+        </button>
+        
+        <AnimatePresence>
+          {emailLabelsExpanded && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              <div className="px-5 pb-5 pt-0">
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { name: "New Brand Deal", color: "bg-[#D4E9D7] text-[#3D6B47]" },
+                    { name: "Existing Deal", color: "bg-[#D6E4E8] text-[#3D6B73]" },
+                    { name: "Gifting", color: "bg-[#F5E6D3] text-[#8B6914]" },
+                    { name: "Event", color: "bg-[#FADCD9] text-[#9E4A42]" },
+                    { name: "PR Request", color: "bg-[#E8E4DE] text-[#6B6660]" },
+                    { name: "Fan Mail", color: "bg-[#E5D4E7] text-[#7B5A7E]" },
+                    { name: "Scam", color: "bg-[#F2D4D0] text-[#A84B3F]" },
+                    { name: "Other", color: "bg-[#E0DCD6] text-[#6E6962]" },
+                  ].map((label) => (
+                    <span
+                      key={label.name}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium ${label.color}`}
+                    >
+                      {label.name}
+                    </span>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
-
-          <p className="text-xs text-ink-lighter text-center mt-4">
-            Emails are automatically categorized as they arrive
-          </p>
-        </>
-      ) : (
-        <>
-          {/* Connected Account Card */}
-          <div className="bg-white rounded-3xl border border-border mb-5">
-            <div className="flex items-center gap-4 p-5">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-green-400 to-green-500 flex items-center justify-center text-white font-semibold">
-                N
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="font-semibold text-ink">niall.wade@getretrograde.ai</div>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <div className="w-2 h-2 rounded-full bg-green-500" />
-                  <span className="text-sm text-green-600">Connected</span>
-                </div>
-              </div>
-              <div className="relative">
-                <button 
-                  onClick={() => setShowInboxMenu(!showInboxMenu)}
-                  className="p-2 -mr-2 text-ink-light hover:text-ink transition-colors"
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                    <circle cx="12" cy="5" r="2" />
-                    <circle cx="12" cy="12" r="2" />
-                    <circle cx="12" cy="19" r="2" />
-                  </svg>
-                </button>
-                
-                <AnimatePresence>
-                  {showInboxMenu && (
-                    <>
-                      <div 
-                        className="fixed inset-0 z-40" 
-                        onClick={() => setShowInboxMenu(false)}
-                      />
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: -4 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: -4 }}
-                        transition={{ duration: 0.15 }}
-                        className="absolute right-0 top-10 z-50 w-40 bg-white rounded-xl border border-border shadow-lg overflow-hidden"
-                      >
-                        <button
-                          onClick={() => setShowInboxMenu(false)}
-                          className="w-full flex items-center gap-3 px-4 py-3 text-sm text-ink hover:bg-cream transition-colors"
-                        >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M18.36 6.64A9 9 0 1 1 5.64 6.64 9 9 0 0 1 18.36 6.64Z" />
-                            <line x1="12" y1="8" x2="12" y2="12" />
-                            <line x1="12" y1="16" x2="12.01" y2="16" />
-                          </svg>
-                          Turn off
-                        </button>
-                        <div className="h-px bg-border" />
-                        <button
-                          onClick={() => setShowInboxMenu(false)}
-                          className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                        >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="3 6 5 6 21 6" />
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                          </svg>
-                          Delete inbox
-                        </button>
-                      </motion.div>
-                    </>
-                  )}
-                </AnimatePresence>
-              </div>
-            </div>
-          </div>
-
-          {/* Negotiation Settings Card */}
-          <div className="bg-white rounded-3xl border border-border overflow-hidden mb-5">
-            <div className="p-5">
-              <h2 className="text-xl font-semibold text-ink mb-1" style={{ fontFamily: "var(--font-display)" }}>
-                Negotiation settings
-              </h2>
-              <p className="text-sm text-ink-light">Controls the tone and rate stance in generated drafts</p>
-              
-              <div className="flex gap-2 mt-4 bg-cream rounded-2xl p-1.5">
-                {(["Soft", "Standard", "Firm"] as const).map((tone) => (
-                  <button
-                    key={tone}
-                    onClick={() => setNegotiationTone(tone)}
-                    className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                      negotiationTone === tone
-                        ? "bg-white text-ink shadow-sm"
-                        : "text-ink-light hover:text-ink"
-                    }`}
-                  >
-                    {tone}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <p className="text-xs text-ink-lighter text-center mt-4">
-            Automatically generate draft replies for incoming brand deal emails
-          </p>
-        </>
-      )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+      
+      {/* Footer Text */}
+      <p className="text-sm text-ink-lighter text-center mt-6">
+        Check your Gmail inbox to see labels and draft replies.
+      </p>
     </div>
   );
 }
 
+// Deals Tab
+function DealsTab() {
+  type DealStatus = "all" | "new" | "negotiating" | "in-progress" | "completed";
+  
+  interface Deal {
+    id: number;
+    brand: string;
+    logo: string;
+    logoType: "icon" | "image" | "letter";
+    logoBg?: string;
+    status: "new" | "negotiating" | "in-progress" | "completed";
+    amount?: number;
+    date: string;
+  }
+
+  const [activeFilter, setActiveFilter] = useState<DealStatus>("all");
+
+  const filters: { id: DealStatus; label: string; icon?: string }[] = [
+    { id: "all", label: "All", icon: "🤝" },
+    { id: "new", label: "New", icon: "✨" },
+    { id: "negotiating", label: "Negotiating", icon: "💬" },
+    { id: "in-progress", label: "In Progress", icon: "✏️" },
+    { id: "completed", label: "Completed", icon: "✅" },
+  ];
+
+  const deals: Deal[] = [
+    { id: 1, brand: "Unknown", logo: "🏢", logoType: "icon", logoBg: "bg-gray-100", status: "new", date: "12/6/2025" },
+    { id: 2, brand: "Talanx", logo: "T", logoType: "letter", logoBg: "bg-gradient-to-br from-pink-400 to-pink-600", status: "new", amount: 15000, date: "12/6/2025" },
+    { id: 3, brand: "Nike", logo: "nike", logoType: "image", logoBg: "bg-black", status: "new", amount: 10000, date: "12/6/2025" },
+    { id: 4, brand: "Lego®", logo: "lego", logoType: "image", logoBg: "bg-red-500", status: "negotiating", amount: 10000, date: "12/6/2025" },
+    { id: 5, brand: "Unknown", logo: "🏢", logoType: "icon", logoBg: "bg-gray-100", status: "new", date: "12/6/2025" },
+    { id: 6, brand: "Glossier", logo: "G", logoType: "letter", logoBg: "bg-gradient-to-br from-pink-200 to-pink-300", status: "in-progress", amount: 8000, date: "12/5/2025" },
+    { id: 7, brand: "Spotify", logo: "S", logoType: "letter", logoBg: "bg-green-500", status: "completed", amount: 12000, date: "12/3/2025" },
+    { id: 8, brand: "Adobe", logo: "A", logoType: "letter", logoBg: "bg-red-600", status: "negotiating", amount: 20000, date: "12/4/2025" },
+  ];
+
+  const filteredDeals = activeFilter === "all" 
+    ? deals 
+    : deals.filter(deal => deal.status === activeFilter);
+
+  const getStatusStyle = (status: Deal["status"]) => {
+    switch (status) {
+      case "new":
+        return "bg-blue-50 text-blue-600";
+      case "negotiating":
+        return "bg-amber-50 text-amber-600";
+      case "in-progress":
+        return "bg-purple-50 text-purple-600";
+      case "completed":
+        return "bg-green-50 text-green-600";
+      default:
+        return "bg-gray-50 text-gray-600";
+    }
+  };
+
+  const getStatusLabel = (status: Deal["status"]) => {
+    switch (status) {
+      case "new":
+        return "New";
+      case "negotiating":
+        return "Negotiating";
+      case "in-progress":
+        return "In Progress";
+      case "completed":
+        return "Completed";
+      default:
+        return status;
+    }
+  };
+
+  const renderLogo = (deal: Deal) => {
+    if (deal.logoType === "image") {
+      if (deal.logo === "nike") {
+        return (
+          <div className={`w-14 h-14 rounded-2xl ${deal.logoBg} flex items-center justify-center`}>
+            <svg width="32" height="12" viewBox="0 0 32 12" fill="white">
+              <path d="M32 1.6c-4.5 2.2-9.3 4.6-13.9 7-2.3 1.2-4.5 2.2-6.1 2.7-1.6.5-2.6.4-3-.4-.4-.8.1-2.3 1.3-4.1 1.2-1.8 3-3.8 5.3-5.8-4.3 1.4-7.8 3.2-10.3 5.3-2.5 2.1-3.9 4.3-3.9 6.3 0 1 .4 1.8 1.1 2.3.7.5 1.7.7 2.9.5 1.2-.2 2.6-.7 4.2-1.5 3.2-1.6 7.1-4.1 11.5-7.1L32 1.6z"/>
+            </svg>
+          </div>
+        );
+      }
+      if (deal.logo === "lego") {
+        return (
+          <div className={`w-14 h-14 rounded-2xl ${deal.logoBg} flex items-center justify-center`}>
+            <span className="text-white font-black text-sm tracking-tight">LEGO</span>
+          </div>
+        );
+      }
+    }
+    
+    if (deal.logoType === "letter") {
+      return (
+        <div className={`w-14 h-14 rounded-2xl ${deal.logoBg} flex items-center justify-center`}>
+          <span className="text-white font-semibold text-xl">{deal.logo}</span>
+        </div>
+      );
+    }
+
+    // Icon type (emoji)
+    return (
+      <div className={`w-14 h-14 rounded-2xl ${deal.logoBg} flex items-center justify-center border border-border`}>
+        <span className="text-2xl">{deal.logo}</span>
+      </div>
+    );
+  };
+
+  return (
+    <div className="h-full overflow-y-auto px-6 py-4">
+      {/* Title & Description */}
+      <h1 className="text-3xl font-semibold text-ink mb-2" style={{ fontFamily: "var(--font-display)" }}>
+        Deals
+      </h1>
+      <p className="text-ink-light text-sm leading-relaxed mb-6">
+        Retrograde automatically identifies deals from your inbox
+      </p>
+
+      {/* Filter Pills */}
+      <div className="flex gap-2 mb-6 overflow-x-auto pb-2 -mx-6 px-6 scrollbar-hide">
+        {filters.map((filter) => (
+          <button
+            key={filter.id}
+            onClick={() => setActiveFilter(filter.id)}
+            className={`flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+              activeFilter === filter.id
+                ? "bg-ink text-cream"
+                : "bg-white border border-border text-ink hover:border-ink/30"
+            }`}
+          >
+            {filter.icon && <span>{filter.icon}</span>}
+            {filter.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Deal Cards */}
+      <div className="space-y-3">
+        <AnimatePresence mode="popLayout">
+          {filteredDeals.map((deal, index) => (
+            <motion.div
+              key={deal.id}
+              layout
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2, delay: index * 0.03 }}
+            >
+              <button className="w-full bg-white rounded-2xl border border-border p-4 flex items-center gap-4 hover:border-ink/20 transition-colors text-left">
+                {/* Brand Logo */}
+                {renderLogo(deal)}
+                
+                {/* Deal Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-semibold text-ink">{deal.brand}</span>
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${getStatusStyle(deal.status)}`}>
+                      {getStatusLabel(deal.status)}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 text-sm text-ink-light">
+                    {deal.amount && (
+                      <span className="flex items-center gap-1">
+                        <span>🤝</span>
+                        <span>${deal.amount.toLocaleString()}</span>
+                      </span>
+                    )}
+                    <span className="flex items-center gap-1">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-ink-lighter">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                      </svg>
+                      <span>{deal.date}</span>
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Chevron */}
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-ink-lighter flex-shrink-0">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+        
+        {filteredDeals.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="py-12 text-center"
+          >
+            <div className="w-16 h-16 rounded-full bg-cream mx-auto mb-4 flex items-center justify-center">
+              <span className="text-2xl">🤝</span>
+            </div>
+            <p className="text-ink-light">No deals found</p>
+            <p className="text-sm text-ink-lighter mt-1">Try a different filter</p>
+          </motion.div>
+        )}
+      </div>
+    </div>
+  );
+}
