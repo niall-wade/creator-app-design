@@ -150,9 +150,12 @@ export default function BrandMatchesPage() {
   const skippedCount = swipedBrands.filter(s => s.direction === "left").length;
 
   return (
-    <main className="min-h-dvh bg-cream max-w-md mx-auto w-full overscroll-y-none">
+    <main 
+      className="h-dvh bg-cream max-w-md mx-auto w-full flex flex-col overflow-hidden fixed inset-0"
+      style={{ touchAction: "none" }}
+    >
       {/* Header */}
-      <header className="px-6 pt-4 pb-3 flex items-center justify-between">
+      <header className="px-6 pt-4 pb-3 flex items-center justify-between flex-shrink-0">
         <svg 
           width="160" 
           height="21" 
@@ -217,7 +220,7 @@ export default function BrandMatchesPage() {
       </header>
 
       {/* Title */}
-      <div className="px-6 pb-4">
+      <div className="px-6 pb-4 flex-shrink-0">
         <h1 className="text-2xl font-semibold text-ink mb-1" style={{ fontFamily: "var(--font-display)" }}>
           Brand Matches
         </h1>
@@ -225,7 +228,7 @@ export default function BrandMatchesPage() {
       </div>
 
       {/* Stats Bar */}
-      <div className="px-6 pb-4">
+      <div className="px-6 pb-4 flex-shrink-0">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-full border border-border">
             <span className="text-green-500">✓</span>
@@ -243,13 +246,13 @@ export default function BrandMatchesPage() {
       </div>
 
       {/* Card Area */}
-      <div className="px-6 pb-4">
+      <div className="px-6 pb-4 flex-1 min-h-0">
         {currentIndex < 0 ? (
           /* All Done Screen */
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-3xl border border-border p-8 text-center"
+            className="h-full flex flex-col items-center justify-center bg-white rounded-3xl border border-border p-8 text-center"
           >
             <div className="w-20 h-20 rounded-full bg-gradient-to-br from-terracotta to-orange-400 flex items-center justify-center mb-6 mx-auto">
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -286,7 +289,7 @@ export default function BrandMatchesPage() {
           </motion.div>
         ) : (
           /* Card Stack */
-          <div className="relative h-[520px]">
+          <div className="relative h-full">
             {/* Background cards for stack effect */}
             {currentIndex > 0 && (
               <div 
@@ -313,7 +316,7 @@ export default function BrandMatchesPage() {
 
       {/* Action Buttons */}
       {currentIndex >= 0 && (
-        <div className="px-6 pb-8 pt-2">
+        <div className="px-6 pb-8 pt-2 flex-shrink-0">
           <div className="flex items-center justify-center gap-4">
             {/* Undo */}
             <button
@@ -392,9 +395,7 @@ function SwipeCard({
       drag="x"
       dragConstraints={{ left: 0, right: 0 }}
       dragElastic={0.8}
-      dragListener={true}
       onDragEnd={handleDragEnd}
-      whileDrag={{ cursor: "grabbing" }}
       initial={{ scale: 0.95, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       exit={{ 
