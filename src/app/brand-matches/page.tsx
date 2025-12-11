@@ -370,31 +370,32 @@ function SwipeCard({
   onSwipe: (direction: "left" | "right") => void;
 }) {
   const x = useMotionValue(0);
-  const rotate = useTransform(x, [-200, 200], [-15, 15]);
-  const opacity = useTransform(x, [-200, -100, 0, 100, 200], [0.5, 1, 1, 1, 0.5]);
+  const rotate = useTransform(x, [-200, 200], [-12, 12]);
+  const cardOpacity = useTransform(x, [-200, -100, 0, 100, 200], [0.8, 1, 1, 1, 0.8]);
   
   // Overlay indicators
-  const sendOpacity = useTransform(x, [0, 100], [0, 1]);
-  const skipOpacity = useTransform(x, [-100, 0], [1, 0]);
+  const sendOpacity = useTransform(x, [0, 80], [0, 1]);
+  const skipOpacity = useTransform(x, [-80, 0], [1, 0]);
 
   const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    const threshold = 80; // Lower threshold for easier swiping on mobile
-    const velocity = 500; // Also trigger on fast swipes
+    const threshold = 50; // Very low threshold for easy swiping
+    const velocityThreshold = 300; // Trigger on fast swipes
     
-    if (info.offset.x > threshold || info.velocity.x > velocity) {
+    if (info.offset.x > threshold || info.velocity.x > velocityThreshold) {
       onSwipe("right");
-    } else if (info.offset.x < -threshold || info.velocity.x < -velocity) {
+    } else if (info.offset.x < -threshold || info.velocity.x < -velocityThreshold) {
       onSwipe("left");
     }
   };
 
   return (
     <motion.div
-      className="absolute inset-0 cursor-grab active:cursor-grabbing select-none"
-      style={{ x, rotate, opacity }}
+      className="absolute inset-0 select-none"
+      style={{ x, rotate, opacity: cardOpacity }}
       drag="x"
+      dragDirectionLock
       dragConstraints={{ left: 0, right: 0 }}
-      dragElastic={0.8}
+      dragElastic={1}
       onDragEnd={handleDragEnd}
       initial={{ scale: 0.95, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
@@ -404,10 +405,10 @@ function SwipeCard({
         transition: { duration: 0.2 }
       }}
     >
-      <div className="h-full bg-white rounded-3xl border border-border shadow-xl overflow-hidden relative">
+      <div className="h-full bg-white rounded-3xl border border-border shadow-xl overflow-hidden relative pointer-events-none">
         {/* Send Overlay */}
         <motion.div
-          className="absolute inset-0 bg-green-500/10 flex items-center justify-center z-20 pointer-events-none rounded-3xl"
+          className="absolute inset-0 bg-green-500/10 flex items-center justify-center z-20 rounded-3xl"
           style={{ opacity: sendOpacity }}
         >
           <div className="bg-green-500 text-white px-8 py-4 rounded-2xl font-bold text-xl rotate-12 border-4 border-green-600">
@@ -417,7 +418,7 @@ function SwipeCard({
         
         {/* Skip Overlay */}
         <motion.div
-          className="absolute inset-0 bg-red-500/10 flex items-center justify-center z-20 pointer-events-none rounded-3xl"
+          className="absolute inset-0 bg-red-500/10 flex items-center justify-center z-20 rounded-3xl"
           style={{ opacity: skipOpacity }}
         >
           <div className="bg-red-500 text-white px-8 py-4 rounded-2xl font-bold text-xl -rotate-12 border-4 border-red-600">
@@ -452,7 +453,7 @@ function SwipeCard({
           <div className="h-px bg-border mx-5 flex-shrink-0" />
           
           {/* Email Section */}
-          <div className="flex-1 overflow-y-auto px-5 pt-4 pb-4">
+          <div className="flex-1 overflow-hidden px-5 pt-4 pb-4">
             {/* Contact Email */}
             <div className="flex items-center gap-2 mb-3 bg-cream rounded-xl px-3 py-2.5">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-terracotta flex-shrink-0">
@@ -463,7 +464,7 @@ function SwipeCard({
             </div>
             
             {/* Email Content */}
-            <div className="bg-cream rounded-xl p-4">
+            <div className="bg-cream rounded-xl p-4 overflow-y-auto max-h-full">
               <p className="text-sm text-ink whitespace-pre-wrap leading-relaxed">{brand.email}</p>
             </div>
           </div>
