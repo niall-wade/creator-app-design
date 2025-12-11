@@ -54,3 +54,14 @@ input:-webkit-autofill:focus {
   -webkit-box-shadow: 0 0 0 40px var(--input-bg) inset;
   -webkit-text-fill-color: var(--foreground);
 }
+
+/* Prevent overscroll/bounce on swipe pages */
+.overscroll-none {
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: auto;
+}
+
+/* Prevent pull-to-refresh on touch */
+.touch-none {
+  touch-action: none;
+}

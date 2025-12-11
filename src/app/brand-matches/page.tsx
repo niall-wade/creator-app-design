@@ -150,7 +150,7 @@ export default function BrandMatchesPage() {
   const skippedCount = swipedBrands.filter(s => s.direction === "left").length;
 
   return (
-    <main className="min-h-dvh bg-cream max-w-md mx-auto w-full">
+    <main className="min-h-dvh bg-cream max-w-md mx-auto w-full overscroll-y-none">
       {/* Header */}
       <header className="px-6 pt-4 pb-3 flex items-center justify-between">
         <svg 
@@ -375,22 +375,26 @@ function SwipeCard({
   const skipOpacity = useTransform(x, [-100, 0], [1, 0]);
 
   const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    const threshold = 100;
-    if (info.offset.x > threshold) {
+    const threshold = 80; // Lower threshold for easier swiping on mobile
+    const velocity = 500; // Also trigger on fast swipes
+    
+    if (info.offset.x > threshold || info.velocity.x > velocity) {
       onSwipe("right");
-    } else if (info.offset.x < -threshold) {
+    } else if (info.offset.x < -threshold || info.velocity.x < -velocity) {
       onSwipe("left");
     }
   };
 
   return (
     <motion.div
-      className="absolute inset-0 cursor-grab active:cursor-grabbing touch-none"
+      className="absolute inset-0 cursor-grab active:cursor-grabbing select-none"
       style={{ x, rotate, opacity }}
       drag="x"
       dragConstraints={{ left: 0, right: 0 }}
-      dragElastic={0.9}
+      dragElastic={0.8}
+      dragListener={true}
       onDragEnd={handleDragEnd}
+      whileDrag={{ cursor: "grabbing" }}
       initial={{ scale: 0.95, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       exit={{ 
